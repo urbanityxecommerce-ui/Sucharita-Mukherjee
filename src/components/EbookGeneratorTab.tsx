@@ -65,6 +65,7 @@ export const EbookGeneratorTab: React.FC<EbookGeneratorTabProps> = ({
     result.category || "All"
   );
   const [topicInput, setTopicInput] = useState("");
+  const [isPresetTopic, setIsPresetTopic] = useState(false);
   const [priceDisplay, setPriceDisplay] = useState(result.priceDisplay || "₹19");
   const [anchorPriceDisplay, setAnchorPriceDisplay] = useState(
     result.anchorPriceDisplay || "₹1,999"
@@ -107,10 +108,30 @@ export const EbookGeneratorTab: React.FC<EbookGeneratorTabProps> = ({
     }, 4000);
   };
 
-  const handleTriggerGenerate = (isRetry = false, customCat?: string) => {
+  const handleTriggerGenerate = (
+    isRetry = false,
+    customCat?: string,
+    forceRandomNewTopic = false
+  ) => {
     setActiveStep(1);
     setActiveChapterTab("all");
     const catToUse = customCat ?? selectedCategory;
+
+    // If user clicked "Surprise Me" OR clicked "Retry / Fresh Version" after selecting a preset chip, rotate to a 100% brand-new topic!
+    if (forceRandomNewTopic || (isRetry && isPresetTopic)) {
+      setTopicInput("");
+      setIsPresetTopic(false);
+      onGenerate(
+        "",
+        priceDisplay.trim() || "₹19",
+        anchorPriceDisplay.trim() || "₹1,999",
+        autoDmTrigger.trim() || "SECRET",
+        true,
+        catToUse
+      );
+      return;
+    }
+
     onGenerate(
       topicInput.trim(),
       priceDisplay.trim() || "₹19",
@@ -121,16 +142,18 @@ export const EbookGeneratorTab: React.FC<EbookGeneratorTabProps> = ({
     );
   };
 
+  const [isBoosting, setIsBoosting] = useState(false);
+
   const handleBoostTopic = async () => {
+    setIsBoosting(true);
     const catForBoost =
       selectedCategory === "All" ? "ebook" : selectedCategory;
     const localOptions = boostUserIdeaOptions(topicInput, catForBoost);
     setBoostSuggestions(localOptions);
-    setTopicInput(localOptions[0]);
 
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 6000);
+      const timer = setTimeout(() => controller.abort(), 9000);
       const res = await fetch("/api/boost-idea", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -150,6 +173,8 @@ export const EbookGeneratorTab: React.FC<EbookGeneratorTabProps> = ({
       }
     } catch {
       // Keep local boost suggestions
+    } finally {
+      setIsBoosting(false);
     }
   };
 
@@ -217,27 +242,28 @@ ${result.ebook.quickValueBreakdown
 ${result.ebook.chapters
   .map(
     (ch) => `=========================================
-CHAPTER ${ch.chapterNumber}: ${ch.title}
-Subtitle: ${ch.subtitle}
+Chapter 0${ch.chapterNumber} · ${ch.title}
+⚠️ WARNING: Keep this strictly confidential.
+${ch.subtitle ? `(${ch.subtitle.replace(/^⚠️\s*WARNING:\s*Keep this strictly confidential\.?\s*/i, "")})` : ""}
 
-1% Secret Summary:
+👁️ The 99% Illusion vs. The 1% Reality:
 ${ch.coreSecretSummary}
 
-🎯 Mastermind Shortcut (Where & How to Find It):
-${ch.whereToFindOrHiddenTrick || "Use the exact search query and verified filter below."}
+🎯 The "Grey-Hat" Mechanism (The Secret):
+${ch.whereToFindOrHiddenTrick || "Use the exact search query and verified click-path below."}
 
-Action Steps:
-${ch.stepByStepExecution.map((s, i) => `${i + 1}. ${s}`).join("\n")}
+⚙️ Step-by-Step Execution (The Exploit):
+${ch.stepByStepExecution.map((s) => `${s}`).join("\n")}
 
-Exact Websites & Tools:
+🌐 Exact Underground Portals & Free Tools:
 ${(ch.exactToolsOrWebsites || [])
   .map((t) => `- ${t.name} (${t.role}): ${t.insiderTip}`)
   .join("\n")}
 
-${ch.copyPasteTemplateOrScript.label}:
+🧠 The Jedi Mind-Trick / Secret Script (${ch.copyPasteTemplateOrScript.label}):
 ${ch.copyPasteTemplateOrScript.content}
 
-Real-World Proof / Math:
+🔥 The Unfair Advantage:
 ${ch.incomeMathOrProof}
 `
   )
@@ -493,26 +519,45 @@ ${fiveHashtags.join(" ")}`;
           {/* Row 1: Topic Input + Boost Button */}
           <div>
             <label className="block text-xs font-semibold text-pink-200/90 mb-1.5">
-              2. Enter Your Specific Topic (Or Leave Blank for Category Mastermind Topic):
+              2. Enter Your Specific Topic in English or Hinglish (100% Custom AI Generation — Or Leave Blank for Category Vault):
             </label>
             <div className="flex flex-col sm:flex-row gap-2.5">
-              <input
-                type="text"
-                value={topicInput}
-                onChange={(e) => setTopicInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleTriggerGenerate(false);
-                }}
-                placeholder="e.g., Free Google & Harvard Certificates, How to Find Clients with 0 Followers, ₹150 Pharmacy Skincare Dupes, Secret AI Study Websites..."
-                className="flex-1 px-4 py-3 rounded-xl bg-[#0D0816] border border-pink-500/30 text-sm text-white placeholder-pink-300/40 focus:outline-none focus:border-pink-400"
-              />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={topicInput}
+                  onChange={(e) => {
+                    setTopicInput(e.target.value);
+                    setIsPresetTopic(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleTriggerGenerate(false);
+                  }}
+                  placeholder="Type ANY custom topic in English or Hinglish (e.g., Dark Psychology Closing, Free Harvard Certificates, ₹150 Pharmacy Skincare, YouTube Automation)..."
+                  className="w-full pl-4 pr-10 py-3 rounded-xl bg-[#0D0816] border border-pink-500/30 text-sm text-white placeholder-pink-300/40 focus:outline-none focus:border-pink-400"
+                />
+                {topicInput && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTopicInput("");
+                      setIsPresetTopic(false);
+                    }}
+                    title="Clear custom topic"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg bg-white/10 hover:bg-white/20 text-pink-200 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
               <button
                 type="button"
+                disabled={isBoosting}
                 onClick={handleBoostTopic}
-                className="px-4 py-3 rounded-xl bg-purple-950/90 hover:bg-purple-900 text-pink-200 border border-pink-500/30 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                className="px-4 py-3 rounded-xl bg-purple-950/90 hover:bg-purple-900 disabled:opacity-60 text-pink-200 border border-pink-500/30 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
               >
-                <Wand2 className="w-4 h-4 text-pink-400" />
-                <span>Auto-Boost High-FOMO Topic</span>
+                <Wand2 className={`w-4 h-4 text-pink-400 ${isBoosting ? "animate-spin" : ""}`} />
+                <span>{isBoosting ? "AI Boosting Angles..." : "Auto-Boost High-FOMO Topic"}</span>
               </button>
             </div>
           </div>
@@ -655,7 +700,7 @@ ${fiveHashtags.join(" ")}`;
             </div>
           </div>
 
-          {/* Action Buttons: Generate + Retry */}
+          {/* Action Buttons: Generate + Retry + Surprise New Topic */}
           <div className="flex flex-wrap items-center gap-2.5 pt-1">
             <button
               type="button"
@@ -666,8 +711,8 @@ ${fiveHashtags.join(" ")}`;
               <Sparkles className="w-4 h-4" />
               <span>
                 {isGenerating
-                  ? "AI Writing Your Zero-Fluff 5-Chapter Ebook..."
-                  : `Generate ${priceDisplay} Mastermind Ebook + 6s Reel`}
+                  ? "AI Writing Your Classified 5-Chapter Dossier..."
+                  : `Generate ${priceDisplay} Classified Dossier + 6s Reel`}
               </span>
             </button>
 
@@ -680,7 +725,17 @@ ${fiveHashtags.join(" ")}`;
               <RefreshCw
                 className={`w-4 h-4 ${isGenerating ? "animate-spin" : ""}`}
               />
-              <span>Retry / Fresh Mastermind Version</span>
+              <span>Regenerate / Fresh 1% Angle</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isGenerating}
+              onClick={() => handleTriggerGenerate(true, undefined, true)}
+              className="px-4 py-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 disabled:opacity-60 text-amber-200 font-semibold text-xs border border-amber-500/35 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>🎲 Surprise New 1% Topic</span>
             </button>
 
             <div className="ml-auto flex items-center gap-1.5 text-xs text-emerald-300 font-medium">
@@ -694,7 +749,7 @@ ${fiveHashtags.join(" ")}`;
           {/* Quick 1-Click Ebook Presets Filtered by Selected Category */}
           <div className="pt-2 border-t border-pink-500/15">
             <div className="text-[11px] font-semibold text-pink-300/85 mb-1.5">
-              Or Click Any Ready-Made High-FOMO Mastermind Blueprint ({selectedCategory === "All" ? "All Categories" : selectedCategory}):
+              Or Click Any Ready-Made Classified Grey-Hat Oracle Blueprint ({selectedCategory === "All" ? "All Categories" : selectedCategory}):
             </div>
             <div className="flex flex-wrap gap-1.5">
               {filteredPresets.map((preset) => (
@@ -705,6 +760,7 @@ ${fiveHashtags.join(" ")}`;
                   onClick={() => {
                     setSelectedCategory(preset.category);
                     setTopicInput(preset.topic);
+                    setIsPresetTopic(true);
                     setPriceDisplay(preset.recommendedPrice);
                     setAnchorPriceDisplay(preset.anchorPrice);
                     setAutoDmTrigger(preset.triggerWord);
@@ -1075,7 +1131,7 @@ ${fiveHashtags.join(" ")}`;
               </>
             )}
 
-            {/* 5 Simple-English Chapters */}
+            {/* 5 Simple-English Classified Grey-Hat Oracle Chapters */}
             <div className="space-y-8">
               {result.ebook.chapters.map((chapter, idx) => {
                 if (
@@ -1084,103 +1140,125 @@ ${fiveHashtags.join(" ")}`;
                 ) {
                   return null;
                 }
+                const cleanSubtitleNote = (chapter.subtitle || "")
+                  .replace(/^⚠️\s*WARNING:\s*Keep this strictly confidential\.?\s*/i, "")
+                  .trim();
+                const chapterCopyText = `Chapter 0${chapter.chapterNumber || idx + 1} · ${chapter.title}\n⚠️ WARNING: Keep this strictly confidential.\n${cleanSubtitleNote ? `${cleanSubtitleNote}\n` : ""}\n👁️ The 99% Illusion vs. The 1% Reality:\n${chapter.coreSecretSummary}\n\n🎯 The "Grey-Hat" Mechanism (The Secret):\n${chapter.whereToFindOrHiddenTrick || ""}\n\n⚙️ Step-by-Step Execution (The Exploit):\n${chapter.stepByStepExecution.join("\n")}\n\n🌐 Exact Underground Portals & Free Tools:\n${(chapter.exactToolsOrWebsites || []).map((t) => `- ${t.name} (${t.role}): ${t.insiderTip}`).join("\n")}\n\n🧠 The Jedi Mind-Trick / Secret Script (${chapter.copyPasteTemplateOrScript.label}):\n${chapter.copyPasteTemplateOrScript.content}\n\n🔥 The Unfair Advantage:\n${chapter.incomeMathOrProof}`;
+
                 return (
                   <section
                     key={chapter.chapterNumber || idx}
-                    className={`ebook-chapter-card p-5 md:p-6 rounded-2xl border ${
+                    className={`ebook-chapter-card p-5 md:p-6 rounded-2xl border shadow-xl ${
                       ebookThemeMode === "dark"
-                        ? "bg-[#0E0818] border-pink-500/25"
+                        ? "bg-gradient-to-b from-[#120921] to-[#0B0614] border-pink-500/30"
                         : "bg-white border-pink-200"
                     }`}
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                      <span className="text-xs font-bold uppercase tracking-wider text-pink-400">
-                        Chapter 0{chapter.chapterNumber || idx + 1} · 1% Insider
-                        Framework
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                      <span className="text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md bg-pink-500/15 border border-pink-500/30 text-pink-400">
+                        Chapter 0{chapter.chapterNumber || idx + 1} · Classified 1% Dossier
                       </span>
                       <div className="no-print">
                         <CopyButton
-                          text={`Chapter ${chapter.chapterNumber || idx + 1}: ${chapter.title}\n${chapter.subtitle}\n\n${chapter.coreSecretSummary}\n\nMastermind Shortcut:\n${chapter.whereToFindOrHiddenTrick || ""}\n\nAction Steps:\n${chapter.stepByStepExecution.join("\n")}\n\n${chapter.copyPasteTemplateOrScript.label}:\n${chapter.copyPasteTemplateOrScript.content}\n\nProof:\n${chapter.incomeMathOrProof}`}
+                          text={chapterCopyText}
                           label={`Copy Ch ${chapter.chapterNumber || idx + 1}`}
                         />
                       </div>
                     </div>
 
                     <h3
-                      className={`text-xl font-bold font-editorial mb-2 ${
+                      className={`text-xl md:text-2xl font-bold font-editorial mb-3 ${
                         ebookThemeMode === "dark"
                           ? "text-white"
                           : "text-[#180920]"
                       }`}
                     >
-                      {chapter.title}
+                      Chapter 0{chapter.chapterNumber || idx + 1} · {chapter.title}
                     </h3>
 
+                    {/* ⚠️ WARNING: Keep this strictly confidential */}
                     <div
-                      className={`text-xs font-semibold px-3 py-1.5 rounded-lg inline-block mb-4 ${
+                      className={`text-xs font-bold px-3.5 py-2.5 rounded-xl border mb-4 flex flex-col gap-1 ${
                         ebookThemeMode === "dark"
-                          ? "bg-purple-950/80 text-pink-200 border border-pink-500/25"
-                          : "bg-purple-50 text-purple-900 border border-purple-200"
+                          ? "bg-amber-950/40 text-amber-200 border-amber-500/40"
+                          : "bg-amber-50 text-amber-950 border-amber-300"
                       }`}
                     >
-                      💡 {chapter.subtitle}
+                      <div className="uppercase tracking-wider text-amber-400 font-extrabold">
+                        ⚠️ WARNING: Keep this strictly confidential.
+                      </div>
+                      {cleanSubtitleNote && (
+                        <div className="font-medium opacity-95">
+                          💡 {cleanSubtitleNote}
+                        </div>
+                      )}
                     </div>
 
-                    <p
-                      className={`ebook-12pt-body mb-4 ${
+                    {/* 👁️ The 99% Illusion vs. The 1% Reality */}
+                    <div
+                      className={`p-4 rounded-xl border mb-4 ${
                         ebookThemeMode === "dark"
-                          ? "text-pink-100/90"
-                          : "text-gray-800"
+                          ? "bg-[#160B28] border-purple-500/30 text-pink-100/95"
+                          : "bg-purple-50/70 border-purple-200 text-gray-900"
                       }`}
                     >
-                      {chapter.coreSecretSummary}
-                    </p>
+                      <div className="text-xs font-extrabold uppercase tracking-wider text-purple-300 mb-1.5">
+                        👁️ The 99% Illusion vs. The 1% Reality:
+                      </div>
+                      <p className="ebook-12pt-body leading-relaxed">
+                        {chapter.coreSecretSummary}
+                      </p>
+                    </div>
 
-                    {/* 🎯 Mastermind Where-To-Find / Exact Filter Callout Box */}
+                    {/* 🎯 The "Grey-Hat" Mechanism (The Secret) */}
                     {chapter.whereToFindOrHiddenTrick && (
                       <div
-                        className={`p-3.5 rounded-xl border mb-4 ${
+                        className={`p-4 rounded-xl border mb-4 ${
                           ebookThemeMode === "dark"
                             ? "bg-pink-950/35 border-pink-500/40 text-pink-100"
                             : "bg-pink-50 border-pink-300 text-pink-950"
                         }`}
                       >
-                        <div className="text-xs font-extrabold uppercase tracking-wider text-pink-400 mb-1">
-                          🎯 Mastermind Shortcut (Exact Search Query, Filter & Click-Path):
+                        <div className="text-xs font-extrabold uppercase tracking-wider text-pink-400 mb-1.5">
+                          🎯 The &ldquo;Grey-Hat&rdquo; Mechanism (The Secret):
                         </div>
-                        <p className="ebook-12pt-body font-medium">
+                        <p className="ebook-12pt-body font-medium leading-relaxed">
                           {chapter.whereToFindOrHiddenTrick}
                         </p>
                       </div>
                     )}
 
-                    {/* Action Steps */}
+                    {/* ⚙️ Step-by-Step Execution (The Exploit) */}
                     <div className="mb-4">
-                      <div className="text-xs font-bold uppercase tracking-wider text-pink-400 mb-2">
-                        Step-by-Step Execution Plan:
+                      <div className="text-xs font-extrabold uppercase tracking-wider text-pink-400 mb-2.5">
+                        ⚙️ Step-by-Step Execution (The Exploit):
                       </div>
-                      <ol className="space-y-2">
+                      <ol className="space-y-2.5">
                         {chapter.stepByStepExecution.map((step, sIdx) => (
                           <li
                             key={sIdx}
-                            className="ebook-12pt-body flex items-start gap-2.5"
+                            className={`ebook-12pt-body p-3 rounded-xl border flex items-start gap-2.5 ${
+                              ebookThemeMode === "dark"
+                                ? "bg-[#120A20] border-pink-500/20 text-pink-100"
+                                : "bg-gray-50 border-pink-100 text-gray-900"
+                            }`}
                           >
-                            <span className="w-5 h-5 rounded-full bg-pink-500/20 text-pink-400 text-xs font-bold flex items-center justify-center shrink-0 mt-1">
+                            <span className="w-6 h-6 rounded-lg bg-pink-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                               {sIdx + 1}
                             </span>
-                            <span>{step}</span>
+                            <span className="leading-relaxed">{step}</span>
                           </li>
                         ))}
                       </ol>
                     </div>
 
-                    {/* Exact Websites & Tools Table */}
+                    {/* 🌐 Exact Underground Portals & Free Tools */}
                     {Array.isArray(chapter.exactToolsOrWebsites) &&
                       chapter.exactToolsOrWebsites.length > 0 && (
                         <div className="mb-4">
-                          <div className="text-xs font-bold uppercase tracking-wider text-pink-400 mb-2 flex items-center gap-1.5">
+                          <div className="text-xs font-extrabold uppercase tracking-wider text-pink-400 mb-2 flex items-center gap-1.5">
                             <Globe className="w-3.5 h-3.5" />
-                            <span>Exact Websites & Free Tools to Use:</span>
+                            <span>Exact Underground Portals & Free Tools:</span>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             {chapter.exactToolsOrWebsites.map((tool, tIdx) => (
@@ -1199,7 +1277,7 @@ ${fiveHashtags.join(" ")}`;
                                   </span>
                                 </div>
                                 <div className="mt-1 opacity-90">
-                                  Pro Tip: {tool.insiderTip}
+                                  Insider Tip: {tool.insiderTip}
                                 </div>
                               </div>
                             ))}
@@ -1207,17 +1285,20 @@ ${fiveHashtags.join(" ")}`;
                         </div>
                       )}
 
-                    {/* Copy-Paste Script / Template Box */}
+                    {/* 🧠 The Jedi Mind-Trick / Secret Script */}
                     <div
                       className={`p-4 rounded-xl border mb-4 ${
                         ebookThemeMode === "dark"
-                          ? "bg-[#170E29] border-pink-500/30"
+                          ? "bg-[#170E29] border-pink-500/35"
                           : "bg-pink-50/70 border-pink-200"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-xs font-bold uppercase tracking-wider text-pink-400">
-                          {chapter.copyPasteTemplateOrScript.label}:
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-pink-400">
+                          {chapter.copyPasteTemplateOrScript.label.startsWith("🧠")
+                            ? chapter.copyPasteTemplateOrScript.label
+                            : `🧠 The Jedi Mind-Trick / Secret Script (${chapter.copyPasteTemplateOrScript.label})`}
+                          :
                         </span>
                         <div className="no-print">
                           <CopyButton
@@ -1237,10 +1318,21 @@ ${fiveHashtags.join(" ")}`;
                       </pre>
                     </div>
 
-                    {/* Real-World Income Math */}
-                    <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
-                      <CheckCircle2 className="w-4 h-4 shrink-0" />
-                      <span>{chapter.incomeMathOrProof}</span>
+                    {/* 🔥 The Unfair Advantage */}
+                    <div
+                      className={`p-3.5 rounded-xl border flex items-start gap-2.5 text-xs font-semibold ${
+                        ebookThemeMode === "dark"
+                          ? "bg-emerald-950/35 border-emerald-500/35 text-emerald-300"
+                          : "bg-emerald-50 border-emerald-200 text-emerald-900"
+                      }`}
+                    >
+                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
+                      <div>
+                        <span className="font-extrabold uppercase tracking-wider text-emerald-400 mr-1.5">
+                          🔥 The Unfair Advantage:
+                        </span>
+                        <span>{chapter.incomeMathOrProof}</span>
+                      </div>
                     </div>
                   </section>
                 );

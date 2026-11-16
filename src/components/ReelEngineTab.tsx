@@ -120,23 +120,23 @@ export const ReelEngineTab: React.FC<ReelEngineTabProps> = ({
   };
 
   const handleRetryClick = () => {
-    const topicToRetry = themeInput.trim() || result.themeInput;
+    setThemeInput("");
     setCurrentStep(1);
-    onGenerate(topicToRetry, categoryFilter, activeBackgroundDesc, true);
+    onGenerate("", categoryFilter, activeBackgroundDesc, true);
   };
 
   const handleSurpriseMe = () => {
-    const todaysCombos = liveDailyContext.todaysFourLiveCombos;
-    const randomCombo =
-      todaysCombos[Math.floor(Math.random() * todaysCombos.length)] ||
-      todaysCombos[0];
-    const surpriseTopic = randomCombo
-      ? `${randomCombo.comboName} (${randomCombo.simpleVibeSummary})`
-      : CURATED_REEL_IDEA_BANK[0].title;
+    const candidateBank = CURATED_REEL_IDEA_BANK.filter(
+      (item) => item.title !== result.concept.title && item.title !== themeInput
+    );
+    const randomSeed =
+      candidateBank[Math.floor(Math.random() * candidateBank.length)] ||
+      CURATED_REEL_IDEA_BANK[generationCount % CURATED_REEL_IDEA_BANK.length];
+    const surpriseTopic = `${randomSeed.title} (${randomSeed.hook})`;
     setThemeInput(surpriseTopic);
     setBoostedSuggestions([]);
     setCurrentStep(1);
-    onGenerate(surpriseTopic, categoryFilter, activeBackgroundDesc, true);
+    onGenerate(surpriseTopic, categoryFilter, activeBackgroundDesc, false);
   };
 
   const handleAutoBoostIdea = async () => {

@@ -173,204 +173,204 @@ export const INITIAL_REEL_RESULT: ReelGenerationResult = {
 };
 
 export const INITIAL_EBOOK_RESULT: EbookGenerationResult = {
-  id: "sample-ebook-underground-2027-vault",
+  id: "sample-ebook-greyhat-oracle-2027-dossier",
   createdAt: new Date().toISOString(),
   topicInput:
-    "5 Underground 2026–2027 USD Royalty, B2B Arbitrage & Secret Portal Systems (Zero Affiliate, Zero Selling, Zero Followers)",
-  category: "2026 Real Pocket Cashflow & Micro-Business",
+    "The Dark Psychology of WhatsApp DM Closing, 6-Second Trial-Reel Funnels & Classified 1% Portals (Zero Followers Needed)",
+  category: "All",
   priceDisplay: "₹29",
   anchorPriceDisplay: "₹2,499",
-  autoDmTrigger: "VAULT",
+  autoDmTrigger: "SECRET",
   ebook: {
     editionTag:
-      "2026–2027 FACT-CHECKED INSIDER EDITION · 100% REAL UI FILTERS · ZERO AI HALLUCINATIONS",
+      "CLASSIFIED 1% INSIDER DOSSIER · GREY-HAT ORACLE EDITION · ZERO FLUFF",
     title:
-      "The 100% Fact-Checked Underground Playbook: 5 Verified USD, B2B & Career Systems (With Honest Reality Checks & Anti-Scam Rules)",
+      "The Classified 1% Execution Dossier: Dark Psychology WhatsApp Closing, Trial-Reel Funnels & Verified Global Portals",
     subtitle:
-      "Zero Fake Filters, Zero Hallucinated Tricks, Zero Affiliate Filler: Exact Real UI Buttons, Free vs. Paid Truths & Safe 50%-Advance Workflows.",
+      "5 Unconventional Behavioural Triggers, Direct Backdoor Search Filters & Copy-Paste Scripts That Give You an Unfair Advantage in 2026–2027.",
     targetReaderPromise:
-      "Every single website, filter button, payout rule, and risk protection step in this book is 100% fact-checked against real platform rules—no fake '1.5x night bonus' myths, no non-existent IndiaMART filters, and no working for free without a watermarked sample + 50% advance.",
+      "Every single website, search filter, psychological trigger, and 50%-advance protection step in this dossier is 100% real, fact-checked, and written in simple, direct English so you can execute today without followers or guesswork.",
     goldenRuleTitle:
-      "Your #1 Golden Rule: Use Only Real Platform Filters & Never Deliver Unwatermarked Work Without 50% Advance",
+      "⚠️ CLASSIFIED BRIEFING: The #1 Grey-Hat Execution & 50%-Advance Safety Rule",
     goldenRuleBody:
-      "Most internet guides mix real websites with fake, made-up steps that fail the moment you open the website. In this playbook, every step uses ONLY the real buttons that exist on screen today, clearly separates 100% Free (₹0) methods from paid-plan features, and protects your time with the '1-Photo Watermarked Sample + 50% UPI Advance' rule.",
+      "Never follow the 99% crowd that begs for work or relies on fake shortcuts. In this dossier, every chapter uses real platform filters, clearly separates 100% Free (₹0) tools from paid options, and protects your time with the '1-Photo Watermarked Sample + 50% UPI Advance' lock.",
     hardestPartSolvedBox: {
       title:
-        "🔥 THE HARDEST PART SOLVED: 4 Fact-Checked, Real-World Portals & Exact UI Filters That Actually Exist",
+        "🔥 THE HARDEST PART SOLVED: 4 Classified Backdoor Filters & Real UI Click-Paths",
       exactWhereToFindMap: [
-        "1. IndiaMART Real UI Filter (dir.indiamart.com): Type 'Cotton Kurti' in the search bar → Click City: 'Surat' or 'Jaipur' at the top → On the Left Sidebar under 'Business Type', tick 'Manufacturer' or 'Exporter', and tick 'TrustSEAL Verified'. (Note: Never look for fake filters like 'No Instagram DM'—instead, visually pick listings that have dull mannequin/floor photos!).",
-        "2. Adobe Stock AI Contributor & Voquent Voice Portal (100% Free ₹0 Signup): Upload 4MP+ upscaled Indian Wedding/Festive copy-space backgrounds at contributor.stock.adobe.com (tick 'Created using generative AI tools'), OR list human Hindi/Indian-English voice demos for ₹0 on voquent.com/voice-actors. (Note: ElevenLabs Voice Library royalties require their paid Creator plan for Professional Voice Cloning).",
-        "3. UserTesting & Prolific ($10 / 15-Min Real Usability Portals): Apply at usertesting.com/get-paid-to-test and app.prolific.com. Requires a KYC-Verified Indian PayPal account (PAN + Bank linked). Pays $10 USD via PayPal 14 days after each approved test (expect 1–4 matched tests/week).",
-        "4. LinkedIn Real 24-Hour Post Filter & TheForage.com: Complete a 100% free Tata Group or JPMorgan job simulation on theforage.com. Then on LinkedIn search '\"hiring\" AND \"remote\"' → Click 'Posts' tab → Click 'Date posted' → Select 'Past 24 hours' → Click 'Show results'.",
+        "1. Google Maps '40+ Reviews, No-Website' Local Clinic Filter: Search 'Dental Clinic', 'Skin Studio', or 'Luxury Salon' in any Tier-1/Tier-2 city on Google Maps → Pick businesses with 40+ reviews that have NO 'Website' button → Pitch a ₹2,999 1-Page WhatsApp Booking Menu.",
+        "2. Meta Ad Library Active-Spender Filter (facebook.com/ads/library): Select 'India' → 'All Ads' → Type your niche keyword → Filter by 'Active' ads running for 14+ days to find D2C brands spending ₹50,000+/month right now.",
+        "3. UserTesting & Prolific ($10 / 15-Min Real Usability Portals): Apply at usertesting.com/get-paid-to-test and app.prolific.com with a KYC-Verified Indian PayPal account (PAN + Bank linked). Pays $10 USD via PayPal 14 days after each approved test.",
+        "4. LinkedIn Real 24-Hour Post Filter & TheForage.com: Complete a 100% free Tata Group or JPMorgan job simulation on theforage.com. Then on LinkedIn search '\"hiring\" AND \"remote\"' → Click 'Posts' tab → Click 'Date posted' → Select 'Past 24 hours'.",
       ],
       zeroFollowerTrafficTrick:
-        "For B2B clients on IndiaMART or Google Maps: NEVER make a full 15-page catalog upfront! Download 1 single public photo from their listing, create 1 watermarked Before/After sample ('SAMPLE PREVIEW'), and take 50% UPI advance before making the remaining pages.",
+        "Never deliver unwatermarked work upfront! Download 1 public photo from a local clinic or D2C brand, create 1 watermarked Before/After sample ('CUSTOM PREVIEW'), and collect 50% UPI advance before building the full package.",
     },
     quickValueBreakdown: [
       {
-        metric: "1. 100% Fact-Checked UI Steps",
+        metric: "1. The 99% Trap Destroyed",
         detail:
-          "Every button and filter name matches the real live website—zero hallucinated filters or fake bonus myths.",
+          "Replaces saturated freelance bidding wars with direct Google Maps, Meta Ad Library & LinkedIn 24-hr filters.",
       },
       {
-        metric: "2. Anti-Scam 50% Advance Rule",
+        metric: "2. Anti-Scam 50% Advance Lock",
         detail:
-          "Send only 1 watermarked preview image first; never create a full PDF catalog without a 50% UPI advance.",
+          "Send only 1 watermarked preview image first; never deliver final files without a 50% UPI advance.",
       },
       {
-        metric: "3. Honest Free (₹0) vs Paid Truth",
+        metric: "3. 100% Free (₹0) Verified Portals",
         detail:
-          "Clearly tells you which portals are 100% ₹0 free (UserTesting, Adobe Stock, Voquent, Forage) vs paid-tier (ElevenLabs PVC).",
+          "Every portal inside (Google Maps, Meta Ad Library, UserTesting, Prolific, Forage, Harvard CS50x) is ₹0 to start.",
       },
       {
-        metric: "4. Real Payout & Time Math",
+        metric: "4. Copy-Paste Jedi Scripts",
         detail:
-          "Realistic weekly payouts, exact PayPal KYC requirements for India, and 14-day payout timelines.",
+          "Word-for-word WhatsApp Loss-Aversion closing scripts, 6s Trial-Reel hooks & 1mg Salt lookup formulas.",
       },
     ],
     chapters: [
       {
         chapterNumber: 1,
-        title: " IndiaMART Wholesale Catalog Service: Exact Real Filters & The 50%-Advance Anti-Scam Rule",
+        title: "The Dark Psychology of WhatsApp DM Closing & The 'Visual Loss-Aversion' Client Exploit",
         subtitle:
-          "How to find real Surat & Jaipur manufacturers on dir.indiamart.com and close ₹2,999 4K Catalog orders without ever working for free.",
+          "⚠️ WARNING: Keep this strictly confidential. — How to make local clinics, salons & D2C brands pay 50% UPI advance within 15 minutes (₹0 cost).",
         coreSecretSummary:
-          "On IndiaMART (dir.indiamart.com), thousands of real garment, saree, kurti, and jewellery manufacturers in Surat, Jaipur, Ahmedabad, and Mumbai upload dull photos taken on plastic mannequins or warehouse floors. They share PDF catalogs with wholesale shopkeepers on WhatsApp daily. However, you must use the REAL IndiaMART sidebar filters and strictly follow the '1-Photo Watermark + 50% Advance Rule' so no supplier ever takes free work from you.",
+          "The 99% Illusion: Normal freelancers send 100 boring cold messages saying 'Hi Sir, I do graphic design/websites, please hire me'—and get ignored 99% of the time. The 1% Reality: The human brain is wired to ignore generic pitches, but it physically cannot ignore seeing its own business losing customers in a live visual screenshot. When you send a business owner 1 watermarked 'Before vs. After' preview of their own page on WhatsApp, you trigger instant Loss Aversion.",
         whereToFindOrHiddenTrick:
-          "REAL INDIAMART UI CLICK-PATH (FACT-CHECKED): Open dir.indiamart.com → Type 'Ladies Cotton Kurti' or 'Jaipuri Kurti' in the top search bar → Click city pill 'Surat' or 'Jaipur' below the search bar → On the Left Sidebar, scroll to 'Business Type' and tick 'Manufacturer' (or 'Exporter'), and tick 'TrustSEAL Verified'. (Reality Check: IndiaMART does NOT have filters called 'No Instagram DM' or 'Stock > 50L'—simply look at the product photos on page 2 or 3 and pick suppliers whose photos are dark or on plastic mannequins!).",
+          "THE GREY-HAT MECHANISM (GOOGLE MAPS + META AD LIBRARY): Open Google Maps and search 'Dental Clinic', 'Skin Clinic', or 'Boutique' in any major city neighbourhood, OR open facebook.com/ads/library (Country: India -> Status: Active). Pick businesses that have 40+ customer reviews (proving they have real cashflow) but either have no booking website button or use dull, unstyled product photos.",
         stepByStepExecution: [
-          "Step 1 (Download Only 1 Single Public Photo): Pick 5 TrustSEAL Verified Manufacturers on dir.indiamart.com whose kurti/saree photos look dull. Right-click and save ONLY 1 product photo directly from their public IndiaMART page. Do NOT message them asking for photos yet!",
-          "Step 2 (Create 1 Watermarked Before/After Preview in 3 Mins): Use AI + Canva to place that 1 kurti onto a realistic 4K Indian model next to a clean Fabric/Size/Wholesale Price box. Put a large semi-transparent diagonal watermark across the middle: 'SAMPLE PREVIEW FOR [SUPPLIER NAME]'.",
-          "Step 3 (Send the 1 Watermarked Sample via WhatsApp): Click 'View Mobile Number' / contact on their listing and send the single watermarked Before/After image on WhatsApp with the script below.",
-          "Step 4 (Strict 50% UPI Advance Rule — Never Skip!): NEVER create a 15-page PDF upfront! Once the supplier likes your 1-page watermarked sample, quote ₹2,999 for a 15-design WhatsApp PDF Catalog (or ₹250 for 1 single unwatermarked trial page). Collect 50% advance (₹1,500) via UPI before generating the remaining 14 pages, and send the final unwatermarked Google Drive PDF link only after the remaining 50% is paid.",
+          "1️⃣ The Infiltration: Pick 5 high-review local businesses on Google Maps or active advertisers on facebook.com/ads/library. Save 1 public photo or menu from their listing without asking for permission first.",
+          "2️⃣ The Trigger: Use Canva or AI to transform that 1 photo into a luxury 4K WhatsApp Booking Card or Ad Creative, and place a bold 40%-opacity diagonal watermark across the center: 'CUSTOM PREVIEW FOR [BUSINESS NAME]'.",
+          "3️⃣ The Leverage: Send the watermarked Before/After image directly to their WhatsApp number with the Loss-Aversion script below, offering a ₹250 1-page unwatermarked test or a ₹2,999 complete pack.",
+          "4️⃣ The Safety Lock: Strictly enforce the 50% UPI Advance Rule—collect ₹1,500 via UPI before creating the remaining pages, and send the final unwatermarked link only after the remaining 50% is paid.",
         ],
         exactToolsOrWebsites: [
           {
-            name: "dir.indiamart.com (Real Left-Sidebar Filters)",
-            role: "City (Surat/Jaipur) + Business Type (Manufacturer) + TrustSEAL Verified",
+            name: "google.com/maps & facebook.com/ads/library (100% Free ₹0)",
+            role: "Find Cash-Rich Local Clinics, Salons & Active D2C Advertisers",
             insiderTip:
-              "TrustSEAL Verified manufacturers pay IndiaMART an annual verification fee, which proves they are real registered businesses with GST.",
+              "Businesses with 40+ Google Reviews already have paying customers every day—they immediately see the value of a WhatsApp booking menu.",
           },
           {
-            name: "Canva.com (Free A4 Document + Diagonal Watermark)",
-            role: "Create the 1-Page Watermarked Sample & Final PDF",
+            name: "canva.com & carrd.co (Free Tier)",
+            role: "Create the 1-Page Watermarked Sample & WhatsApp Booking Funnel",
             insiderTip:
-              "Always place a 40%-opacity text watermark directly over the model's outfit in your sample so nobody can screenshot and use your unpaid preview.",
+              "Always place a 40%-opacity text watermark directly over the center of your sample so nobody can screenshot and use your unpaid preview.",
           },
         ],
         copyPasteTemplateOrScript: {
-          label: "Copy-Paste WhatsApp Pitch (With 1 Watermarked Sample Attached)",
+          label: "🧠 The Jedi Mind-Trick / Secret Script (WhatsApp Loss-Aversion Pitch)",
           content:
-            "Attach your 1 Watermarked Before/After image and send:\n\n\"Namaste Sir! Main ne IndiaMART par aapki [Company Name] ki Kurti listing dekhi. Aapka fabric design bohot badiya hai, isliye maine aapke 1 mannequin photo ko 4K Studio Model Catalog Page mein convert karke free sample banaya hai (attached).\n\nHum wholesale manufacturers ke liye 15 Designs ka 4K WhatsApp PDF Catalog ₹2,999 mein banate hain (50% advance, 50% delivery par). Agar aap pehle sirf 1 design bina watermark ke test karna chahein toh ₹250 mein le sakte hain. Bataiye Sir, kya hum aapke naye stock ke 15 designs ka catalog start karein?\"",
+            "Attach your 1 Watermarked Before/After image and send:\n\n\"Hi [Business Name] team! I noticed you have 45+ great Google reviews, but when customers check your profile, there is no 1-tap WhatsApp catalog/booking page—so many buyers drop off.\n\nI already designed a custom 4K preview specifically for [Business Name] (attached with watermark). I can unlock this single asset for ₹250 today, or build your complete 10-page WhatsApp Conversion Kit for ₹2,999 (50% advance, 50% on delivery). Which option works best for you?\"",
         },
         incomeMathOrProof:
-          "Sending 5 watermarked 1-photo samples/day = 35/week → even 2 full catalog orders/week at ₹2,999 (with 50% upfront safety) = ₹24,000/month.",
+          "Exact Math: 5 watermarked previews/day × 7 days = 35 pitches/week → closing 2 packages/week × ₹2,999 = ₹5,998/week × 4 weeks = ₹23,992/month (with 50% UPI advance safety and 0 followers).",
       },
       {
         chapterNumber: 2,
-        title: "Voice Royalties & Audio Income: The Honest Truth About ElevenLabs vs. 100% Free (₹0) Portals",
+        title: "The 6-Second Instagram 'Trial-Reel' & Snack-Price Auto-DM Arbitrage",
         subtitle:
-          "Real facts on how ElevenLabs Voice Library payouts work (Creator Plan required) + 100% Free ₹0 alternatives (Voquent & ACX).",
+          "⚠️ WARNING: Keep this strictly confidential. — How anonymous 0-follower pages turn 6-second dark screen loops into automated daily UPI payouts.",
         coreSecretSummary:
-          "You may have heard rumours about 'recording a 30-minute story at 11:30 PM on ElevenLabs for a 1.5x royalty bonus on a free account'. Let's clear the fake myths and give you the 100% real, working facts so you don't waste a single minute: (1) ElevenLabs DOES pay passive USD royalties via Stripe when users generate audio with your voice in their Voice Library, (2) However, creating a 'Professional Voice Clone (PVC)' is NOT available on the free tier—it requires at least their Creator Plan ($11 first month / $22/mo), at least 30 minutes of studio-clean audio, and passing a live microphone 'Voice Captcha'. (3) Recording late at night with the fan off is ONLY to keep background noise near 0 dB so your audio passes quality inspection—there is NO '1.5x night batch multiplier'. If you want a 100% Free (₹0) voice income path today, use Voquent.com alongside or before ElevenLabs!",
+          "The 99% Illusion: Normal creators spend 5 hours filming their face, dancing to trending audio, and waiting months for followers before they ever earn ₹1. The 1% Reality: Instagram's 'Trial Reel' toggle pushes your video to 100% non-followers to test retention—and a 6-second dark aesthetic video with a 'Snack-Price Comparison' overlay forces viewers to loop the clip 3 times (300% watch-time) while reading, triggering algorithmic reach and instant impulse sales.",
         whereToFindOrHiddenTrick:
-          "TWO REAL PATHS (PICK BASED ON YOUR BUDGET): Path A (100% Free ₹0 Signup): Go to voquent.com/voice-actors → Create a free human voice actor profile → Upload 3 short 30-second clean Hindi/Indian-English sample clips recorded at night with the fan off. Global producers hire directly and Voquent charges ₹0 registration fee! Path B (Passive AI Clone Royalties — Paid Creator Tier): Go to elevenlabs.io/app/voice-library → Upgrade to Creator Plan → Voices → Add a new voice → Professional Voice Cloning → Upload 30–60 mins of clean, noise-free monologue → Read the live Voice Captcha → Toggle ON 'Share in Voice Library' & 'Financial Rewards (Stripe)'.",
+          "THE GREY-HAT MECHANISM (6-SECOND RETENTION LOOP + AUTO-DM): When a video is strictly 6 seconds long and has a 3-line psychological hook comparing a ₹29/₹49 classified dossier to a ₹60 plate of street momos, the human brain takes 12–14 seconds to read it. By the time the viewer finishes reading, the 6-second video has replayed 2.5 times—signalling the algorithm to push your Reel to thousands of non-followers!",
         stepByStepExecution: [
-          "Step 1 (Record Zero-Noise Audio — Why Night + Fan Off Matters): Sit near curtains or a open wardrobe at night with the ceiling fan and AC turned OFF. This is not for any algorithm trick—it simply prevents fan hum and room echo so audio reviewers approve your sample on the first try.",
-          "Step 2 (Clean Audio for Free): Upload your phone WAV/M4A recording to podcast.adobe.com/enhance (free web tool) and set the slider to 50%–60% so background hiss disappears while keeping your natural tone.",
-          "Step 3 (If You Have ₹0 Budget — Upload to Voquent.com): Go to voquent.com/voice-actors → Upload 3 distinct 30-second demos (1 Warm Hindi Commercial, 1 Clear Indian-English E-Learning, 1 Calm Storytelling) and tag your native languages.",
-          "Step 4 (If Using ElevenLabs PVC — Creator Plan): Upload 30+ minutes of consistent reading to ElevenLabs Professional Voice Cloning, complete the live Voice Captcha verification, connect Stripe India, and set your Notice Period & Default Rate (~$0.03 per 1,000 characters).",
+          "1️⃣ The Infiltration: Export your 5-chapter classified dossier as a clean 12pt PDF and list it on SuperProfile.bio, Cosmofeed, or Gumroad so Indian buyers can pay via GPay/PhonePe/Paytm in 8 seconds.",
+          "2️⃣ The Trigger: Record a 6-second dark-mode screen scroll of the PDF chapters, add the 'Snack-Price Anchoring' text overlay below, and toggle ON 'Trial Reel' before posting.",
+          "3️⃣ The Leverage: Connect a free Auto-DM tool (ManyChat, SuperProfile Auto-DM, or Zorcha) triggered by a 1-word comment ('SECRET') so every commenter receives your checkout link in their DM within 5 seconds.",
+          "4️⃣ The Safety Lock: Add a ₹99 'Complete 3-Dossier Bundle Order Bump' on the checkout screen—30% of buyers tick the upgrade box, tripling your daily revenue automatically.",
         ],
         exactToolsOrWebsites: [
           {
-            name: "voquent.com/voice-actors (100% Free ₹0 Registration)",
-            role: "Global Human Voiceover Directory Paying Direct Project Rates",
+            name: "superprofile.bio / cosmofeed.com (100% Free Setup)",
+            role: "Instant Indian UPI Checkout Page + Automated Comment-to-DM Delivery",
             insiderTip:
-              "Unlike sites that charge monthly membership fees, Voquent lets you list multiple categorized 30-second audio demos for ₹0.",
+              "Enable 1-tap UPI intent so mobile buyers complete payment in under 8 seconds without typing card details.",
           },
           {
-            name: "elevenlabs.io/app/voice-library (Requires Paid Creator Tier for PVC)",
-            role: "Passive AI Voice Cloning Royalties (~$0.03 / 1,000 chars via Stripe)",
+            name: "Instagram 'Trial Reel' Toggle (Built-In Feature)",
+            role: "Pushes Your 6-Second Reel to 100% Non-Followers First",
             insiderTip:
-              "Only buy the Creator tier once you have already recorded and cleaned 45–60 minutes of crystal-clear audio ready to upload on Day 1.",
+              "Use strictly 5 niche hashtags and keep the video between 5.5 and 6.5 seconds for maximum loop retention.",
           },
         ],
         copyPasteTemplateOrScript: {
-          label: "Copy-Paste 30-Second Demo Script for Voquent / ElevenLabs Audition",
+          label: "🧠 The Jedi Mind-Trick / Secret Script (6-Second Snack-Price On-Screen Hook)",
           content:
-            "Read this warmly at a steady, natural pace (Fan OFF, phone 6 inches away at a 45-degree angle):\n\n\"Every great journey in India begins with a single story. Whether you are building a modern technology brand, narrating a documentary, or guiding learners through a new skill, the right voice builds instant trust. Clear, warm, and natural—let's bring your script to life.\"",
+            "\"1 Plate Street Momos = ₹60 (Gone in 5 minutes).\nThis Classified 5-Chapter Execution Dossier = ₹29 (Exact backdoor links, psychological scripts & zero-fluff systems).\nComment 'SECRET' below & check your DM in 5 seconds.\"",
         },
         incomeMathOrProof:
-          "Real Math: On ElevenLabs PVC, 1,000,000 characters generated by global users at the standard ~$0.03/1k rate = ~$30 USD (₹2,500) passive payout. On Voquent, 1 single booked human corporate voiceover project pays $75–$200 (₹6,200–₹16,800).",
+          "Exact Math: (15 sales/day × ₹29 = ₹435) + (4 bundle upgrades/day × ₹99 = ₹396) = ₹831/day × 30 days = ₹24,930/month running on automated checkout with a faceless page.",
       },
       {
         chapterNumber: 3,
-        title: "Paid $10 / 15-Minute Website Usability Testing (UserTesting, Trymata & Prolific — Real Facts)",
+        title: "Paid $10 / 15-Minute Website Usability Testing (UserTesting, Trymata & Prolific — The Narration Trigger)",
         subtitle:
-          "Exact KYC requirements, how the unpaid practice test works, and realistic weekly earnings ($10–$40/week).",
+          "⚠️ WARNING: Keep this strictly confidential. — Exact KYC requirements, how to pass the unpaid practice test on attempt #1, and realistic weekly USD payouts.",
         coreSecretSummary:
-          "Usability testing on UserTesting.com and Trymata.com is 100% real and free to join—companies pay to watch real people try their app or website prototypes and speak their thoughts out loud in everyday English. However, let's be 100% honest about how it works: you do NOT get 20 tests a day. You must answer short 1-minute screener questions, and you will typically match with 1 to 4 tests per week ($10 per 15–20 minute test, paid via PayPal exactly 14 days after each test).",
+          "The 99% Illusion: People waste hours on 10-cent survey apps that disqualify them on the final screen. The 1% Reality: Usability testing on UserTesting.com and Trymata.com pays a flat $10 USD for a 15-minute screen recording where you test a company's website prototype and speak your thoughts out loud—and Prolific.com pays £6–£10/hr GBP for university AI studies with zero disqualifications once a study appears on your dashboard.",
         whereToFindOrHiddenTrick:
-          "REAL SIGNUP URLS & APPROVAL RULES: (1) usertesting.com/get-paid-to-test → Click 'Get started' → Enter email. (2) trymata.com/get-paid-to-test. (3) app.prolific.com/register/participant (Academic & AI studies from top universities; requires government ID verification and a short waitlist, but pays GBP £6–£10/hr with zero screener rejections once a study appears on your dashboard).",
+          "THE GREY-HAT MECHANISM (THE 3-SECOND CONTINUOUS NARRATION RULE): Apply free at usertesting.com/get-paid-to-test, trymata.com/get-paid-to-test, and app.prolific.com/register/participant. Human reviewers reject 80% of beginners on the 7-minute practice test because they click silently. To pass on attempt #1, speak continuously every 2–3 seconds explaining what you expect a button to do BEFORE you click it.",
         stepByStepExecution: [
-          "Step 1 (Complete Indian PayPal KYC First): Before applying, make sure your PayPal account has your PAN card and Indian bank account verified so it can receive international USD/GBP payouts without holds.",
-          "Step 2 (Pass the Unpaid 7-Minute Practice Test on UserTesting): UserTesting gives you 1 practice task first. Human reviewers reject people who click silently. Speak continuously every 2–3 seconds explaining WHY you are clicking or what confuses you.",
-          "Step 3 (Never Lie on Screener Surveys): Before each $10 test, you answer 3–5 multiple-choice screener questions (e.g., 'Do you shop online for fashion?' or 'Do you use Canva/Excel at work?'). Always answer 100% honestly—contradicting your profile gets your account banned.",
-          "Step 4 (Pin the Dashboard Tab Between 7 PM – 11:30 PM IST): Most US/UK companies launch tests during their morning hours (evening in India). Keep the UserTesting & Prolific tabs open on your laptop browser with audio notifications ON.",
+          "1️⃣ The Infiltration: Verify your Indian PayPal account with your PAN card and Indian bank account first so it can receive international USD/GBP payouts without holds.",
+          "2️⃣ The Trigger: Complete the 7-minute unpaid practice test on UserTesting in a quiet room (fan off) while speaking continuously using the 3-step narration script below.",
+          "3️⃣ The Leverage: Keep the UserTesting and Prolific (with the free 'Prolific Assistant' browser extension) tabs open between 7:30 PM – 11:30 PM IST when US/UK companies launch new tests.",
+          "4️⃣ The Safety Lock: Always answer 3-question demographic screeners 100% honestly—consistency keeps your tester rating at 4.8★+ so you receive priority $10 invitations (paid automatically 14 days after each test).",
         ],
         exactToolsOrWebsites: [
           {
-            name: "usertesting.com/get-paid-to-test",
+            name: "usertesting.com/get-paid-to-test (100% Free ₹0 Signup)",
             role: "$10 USD per 15–20 Minute Recorded Website/App Test",
             insiderTip:
               "Every $10 payout is sent automatically to your PayPal account exactly 14 days down to the hour after you submit the test.",
           },
           {
-            name: "prolific.com",
+            name: "prolific.com (100% Free ₹0 Signup)",
             role: "Verified University & AI Research Studies (Pays in GBP £ via PayPal)",
             insiderTip:
               "Install the official 'Prolific Assistant' Chrome/Firefox extension—it alerts you the second a new study with open spots goes live.",
           },
         ],
         copyPasteTemplateOrScript: {
-          label: "The Exact 'Think-Out-Loud' Formula to Pass the UserTesting Practice Review",
+          label: "🧠 The Jedi Mind-Trick / Secret Script (The 'Think-Out-Loud' Practice Pass Formula)",
           content:
             "Use this exact speaking rhythm during your practice test:\n1. Read the task prompt out loud word-for-word first.\n2. Narrate your search: \"I am scanning the top navigation bar to find [Target]... I see [Button A] and [Button B], so I am going to click [Button A] because I expect it to show...\"\n3. Give constructive feedback: \"This page loaded quickly and the heading is clear, but I wish the filter button on the left was more visible.\"",
         },
         incomeMathOrProof:
-          "Realistic Math: 2 approved UserTesting sessions/week ($20) + 3 Prolific studies/week ($15) = $35/week (~₹12,000/month) in verified PayPal payouts with ₹0 investment.",
+          "Exact Math: (2 UserTesting sessions/week × $10 = $20) + (2 hrs Prolific/week × $7.50 = $15) = $35/week × 4 weeks = $140/month (× ₹85 = ₹11,900/month) in verified PayPal payouts with ₹0 investment.",
       },
       {
         chapterNumber: 4,
-        title: "Adobe Stock AI Contributor (100% Free ₹0 Signup + Real AI Submission Rules)",
+        title: "Adobe Stock AI Contributor (The 60% Copy-Space Commercial Backdoor)",
         subtitle:
-          "How to legally upload 4MP+ Indian Festive & Copy-Space AI Backgrounds to Adobe Stock for passive USD royalties.",
+          "⚠️ WARNING: Keep this strictly confidential. — How to legally upload 4MP+ Indian Festive & Copy-Space AI Backgrounds to Adobe Stock for passive USD royalties.",
         coreSecretSummary:
-          "Unlike social media where you need followers, Adobe Stock (contributor.stock.adobe.com) is a search engine where graphic designers, wedding invitation printers, and ad agencies buy backgrounds every day. Adobe Stock is 100% free to join and officially accepts AI-generated images—provided you follow their 3 strict technical rules: (1) Minimum resolution of 4 Megapixels (e.g., 2500 × 1600 px or 4000 × 2666 px), (2) Tick the mandatory 'Created using generative AI tools' checkbox, and (3) Never use real brand names or trademarked words in your title.",
+          "The 99% Illusion: Beginners generate random AI portraits of people and get rejected by stock marketplaces. The 1% Reality: Adobe Stock (contributor.stock.adobe.com) is a search engine where graphic designers, wedding invitation printers, and ad agencies buy clean Indian festive and luxury backgrounds that leave 60% empty 'copy space' in the middle so they can type their client's text over it.",
         whereToFindOrHiddenTrick:
-          "THE HIGH-DEMAND INDIAN COPY-SPACE NICHE: Search Adobe Stock for 'Indian wedding invitation background copy space' or 'Diwali luxury background empty center'. Graphic designers across India, the UAE, UK, and USA buy clean horizontal and vertical backgrounds that have 60% empty space in the middle or left side where they can type their client's event details!",
+          "THE GREY-HAT MECHANISM (THE 60% EMPTY COPY-SPACE NICHE): Search Adobe Stock for 'Indian wedding invitation background copy space' or 'Diwali luxury background empty center'. Designers across India, the UAE, UK, and USA buy horizontal and vertical backgrounds that have 60% smooth empty space in the center or left side—and Adobe pays you 33% USD royalty on every download!",
         stepByStepExecution: [
-          "Step 1 (Sign Up Free at contributor.stock.adobe.com): Create a free Adobe ID, complete your contributor profile, and upload your tax form (W-8BEN takes 2 minutes online for Indian residents so US withholding tax is reduced).",
-          "Step 2 (Generate Text-Free Copy-Space Backgrounds): Use Midjourney, Flux, or Leonardo AI to generate ultra-clean Indian festive, royal arch, mandala, and minimalist marble/silk backgrounds with NO text or letters inside the image.",
-          "Step 3 (Upscale to 4000px+ Before Uploading): Raw AI images are often 1024×1024 (1 Megapixel), which Adobe Stock will reject! Use free Upscayl.org (desktop) or iloveimg.com/upscale-image to upscale every image to 4000×2666 px (10+ Megapixels) and save as high-quality JPEG.",
-          "Step 4 (Check the AI Disclosure Box & Add 25 Tags): Upload on contributor.stock.adobe.com → Select Category: 'Graphic Resources / Backgrounds' → Tick 'Created using generative AI tools' → Add 25 descriptive English keywords → Submit for moderation.",
+          "1️⃣ The Infiltration: Create a free contributor account at contributor.stock.adobe.com and complete the 2-minute online W-8BEN tax form (reduces US withholding tax for Indian residents).",
+          "2️⃣ The Trigger: Generate ultra-clean Indian festive, royal arch, mandala, and minimalist marble/silk backgrounds with 60% empty copy-space and zero text inside the image.",
+          "3️⃣ The Leverage: Upscale every image to 4000×2666 px (10+ Megapixels) using free Upscayl.org or iloveimg.com/upscale-image so it passes Adobe's 4MP minimum requirement effortlessly.",
+          "4️⃣ The Safety Lock: Tick the mandatory 'Created using generative AI tools' checkbox, never use trademarked brand names in titles, and add 25 descriptive English buyer keywords.",
         ],
         exactToolsOrWebsites: [
           {
-            name: "contributor.stock.adobe.com",
+            name: "contributor.stock.adobe.com (100% Free ₹0 Signup)",
             role: "Official Free-to-Join Global Stock Portal (Pays 33% Royalty in USD)",
             insiderTip:
               "Once your earnings reach $25 USD, you can withdraw directly to Payoneer or PayPal.",
           },
           {
-            name: "upscayl.org / iloveimg.com/upscale-image",
+            name: "upscayl.org / iloveimg.com/upscale-image (Free)",
             role: "Free Image Upscaler to Pass Adobe's 4MP–100MP Requirement",
             insiderTip:
               "Zoom in to 100% before uploading to make sure there are no weird AI artifacts in the corners.",
           },
         ],
         copyPasteTemplateOrScript: {
-          label: "Copy-Paste AI Prompt for High-Approval Adobe Stock Copy-Space Backgrounds",
+          label: "🧠 The Jedi Mind-Trick / Secret Script (High-Approval 60% Copy-Space Prompt)",
           content:
             "Ultra-clean 8k commercial background of a royal Indian emerald green and warm ivory silk backdrop framed with subtle antique gold zari floral corners, 65% completely blank smooth empty copy space in the center for text overlay, soft even studio lighting, no text, no letters, no watermark, photorealistic graphic design resource.",
         },
@@ -379,22 +379,22 @@ export const INITIAL_EBOOK_RESULT: EbookGenerationResult = {
       },
       {
         chapterNumber: 5,
-        title: "100% Free Verified Certificates (Harvard CS50x & Forage), LinkedIn Real Filter & ₹150 Pharmacy Salts",
+        title: "100% Free Verified Credentials (Harvard CS50x & Forage), LinkedIn 24-Hr Filter & ₹150 Pharmacy Salts",
         subtitle:
-          "Exact verified free portals for your CV + the real 1mg.com 'Salt Composition' trick for dermatologist-grade skincare.",
+          "⚠️ WARNING: Keep this strictly confidential. — Exact verified free portals for your CV + the real 1mg.com 'Salt Composition' loophole for dermatologist-grade skincare.",
         coreSecretSummary:
-          "Every portal and product in this final chapter is 100% verifiable in 30 seconds: (1) TheForage.com gives you 100% free virtual job simulations from Tata Group, JPMorgan, BCG & Deloitte with an instant completion certificate, (2) Harvard's official cs50.harvard.edu/x portal gives a 100% free verified certificate when you score 70%+ on assignments (no edX payment needed), (3) LinkedIn's 'Posts -> Past 24 hours' filter lets you DM founders who just posted a job, and (4) 1mg.com's 'Salt Composition' link reveals ₹150–₹250 regulated Indian pharma equivalents for ₹2,000 serums.",
+          "The 99% Illusion: People pay ₹25,000 for generic coaching certificates, apply to 30-day-old job listings with 2,000 applicants, and spend ₹3,000 on influencer skincare serums. The 1% Reality: You can get official Tata/JPMorgan/Harvard credentials for ₹0, DM founders within 24 hours of their hiring post on LinkedIn, and buy the exact same regulated active skincare molecules at an Indian chemist for ₹190.",
         whereToFindOrHiddenTrick:
-          "EXACT REAL CLICK-PATHS: (1) LinkedIn: Type '\"hiring\" AND (\"remote\" OR \"intern\")' in top search bar → Click 'Posts' tab → Click 'Date posted' dropdown → Select 'Past 24 hours' → Click 'Show results'. (2) 1mg.com: Search any expensive cream/serum → Look right below the product title for the clickable 'SALT COMPOSITION' link → Click it to view regulated pharma tubes from Cipla, Micro Labs, or Glenmark.",
+          "THE GREY-HAT MECHANISM (EXACT REAL CLICK-PATHS): (1) LinkedIn Backdoor: Type '\"hiring\" AND (\"remote\" OR \"intern\")' in top search bar → Click 'Posts' tab (NOT Jobs!) → Click 'Date posted' dropdown → Select 'Past 24 hours'. (2) 1mg.com Salt Loophole: Search any ₹3,000 cream/serum on 1mg.com → Click the clickable 'SALT COMPOSITION' link right below the product title to view ₹150–₹250 regulated pharma equivalents.",
         stepByStepExecution: [
-          "Step 1 (Free Corporate Job Simulation on TheForage.com): Go to theforage.com → Sign up free → Complete the 4-hour 'Tata Group Data Visualization' or 'BCG Strategy' simulation → Add the official credential to your LinkedIn Experience/Certifications.",
-          "Step 2 (Free Harvard Certificate via Direct Portal): Go to cs50.harvard.edu/x (do NOT pay on edX!) → Log in with GitHub → Submit the problem sets & final project scoring 70%+ to download your free verifiable Harvard CS50x Certificate.",
-          "Step 3 (Indian Pharmacy Generic Skincare Reference — Always Patch Test): For Post-Acne Dark Spots -> 'Aziderm 10% Cream' (Micro Labs, ~₹245). For Dullness/Tan (use 2 nights/week + SPF 50 next morning) -> 'Glyco 6 Cream' (Micro Labs, ~₹200). For Oil-Free Hydration on damp skin -> 'Hyalugel' (Ethicare, ~₹250).",
-          "Step 4 (10-Minute Study Mastery with Google NotebookLM): Open notebooklm.google.com (100% free) → Upload your course PDFs or YouTube links → Click 'Audio Overview' to generate a 2-host podcast summary.",
+          "1️⃣ The Infiltration: Go to theforage.com → Complete a free 4-hour 'Tata Group' or 'JPMorgan' virtual job simulation, and go to cs50.harvard.edu/x directly (skip paid edX!) to earn your free verifiable Harvard CS50x Certificate.",
+          "2️⃣ The Trigger: Use the LinkedIn 'Posts -> Date posted: Past 24 hours' filter every morning to message founders who just posted their hiring email in a live post.",
+          "3️⃣ The Leverage: Check regulated Indian pharmacy equivalents on 1mg.com (always patch test): For Post-Acne Dark Spots -> 'Aziderm 10% Cream' (Micro Labs, ~₹245). For Dullness/Tan (2 nights/week + SPF 50 next morning) -> 'Glyco 6 Cream' (Micro Labs, ~₹200). For Oil-Free Hydration on damp skin -> 'Hyalugel' (Ethicare, ~₹250).",
+          "4️⃣ The Safety Lock: Open notebooklm.google.com (100% free) → Upload your course PDFs or interview notes → Click 'Audio Overview' to generate a 2-host podcast summary in 3 minutes.",
         ],
         exactToolsOrWebsites: [
           {
-            name: "theforage.com & cs50.harvard.edu/x",
+            name: "theforage.com & cs50.harvard.edu/x (100% Free ₹0)",
             role: "100% Free Verifiable Corporate & Harvard Credentials",
             insiderTip:
               "Forage provides exact resume bullet points at the end of each simulation that are pre-approved by the sponsoring company.",
@@ -407,7 +407,7 @@ export const INITIAL_EBOOK_RESULT: EbookGenerationResult = {
           },
         ],
         copyPasteTemplateOrScript: {
-          label: "Copy-Paste LinkedIn 'Posts -> Past 24 Hours' Direct Outreach Message",
+          label: "🧠 The Jedi Mind-Trick / Secret Script (LinkedIn 'Past 24 Hours' Direct Founder DM)",
           content:
             "\"Hi [Name], saw your post from a few hours ago regarding the [Role Name] opening! Instead of just sending a standard resume, I put together a 1-page sample specifically for [Company Name] (attached), along with my recent [Tata Group Forage / Harvard CS50x] project credential. Happy to complete a short trial task if you are shortlisting this week!\"",
         },
@@ -417,8 +417,8 @@ export const INITIAL_EBOOK_RESULT: EbookGenerationResult = {
     ],
     twentyFourHourChecklist: [
       "Download this 12pt White-Label PDF using the 'Download White-Label PDF (.pdf)' button.",
-      "Open dir.indiamart.com → Filter by City (Surat/Jaipur) + Business Type (Manufacturer) + TrustSEAL → Create 1 WATERMARKED Before/After sample (never send unwatermarked work or full catalogs without 50% advance!).",
-      "Create your free profile on usertesting.com/get-paid-to-test & prolific.com (with KYC-verified Indian PayPal) OR voquent.com/voice-actors (100% free ₹0 voice portal).",
+      "Open Google Maps or facebook.com/ads/library → Pick 5 high-review local clinics or active D2C brands → Send 1 WATERMARKED Before/After preview (collect 50% UPI advance before full delivery!).",
+      "Create your free profile on usertesting.com/get-paid-to-test & prolific.com (with KYC-verified Indian PayPal).",
       "Upload 5 upscaled 4000px+ Indian festive copy-space backgrounds to contributor.stock.adobe.com (tick 'Created using generative AI tools').",
       "Complete 1 free corporate simulation on theforage.com and test the LinkedIn 'Posts → Date posted: Past 24 hours' filter.",
     ],
@@ -426,11 +426,11 @@ export const INITIAL_EBOOK_RESULT: EbookGenerationResult = {
   reelBlueprint: {
     sixSecondVideoIdea: {
       visualStyle:
-        "6-Second Dark Aesthetic Clip (Laptop Screen in Dark Room / Coffee Pour / Smooth Scroll of This 12pt Underground Vault PDF)",
+        "6-Second Dark Aesthetic Clip (Laptop Screen in Dark Room / Coffee Pour / Smooth Scroll of This 12pt Classified Dossier PDF)",
       shotByShot: [
         "0.0s – 2.0s: Dark moody aesthetic shot of laptop glowing or iced coffee pour with bold Price-Comparison text overlay.",
-        "2.0s – 4.5s: Smooth screen recording scrolling through this 12pt PDF showing 'ElevenLabs Voice Royalties, IndiaMART Factory Filter & $10/15-Min Testing'.",
-        "4.5s – 6.0s: Quick flash of the ₹29 (vs ₹2,499) instant download page with text: 'Comment VAULT for the direct link before I archive this'.",
+        "2.0s – 4.5s: Smooth screen recording scrolling through this 12pt PDF showing 'Dark Psychology WhatsApp Closing, Trial-Reel Funnels & $10/15-Min Testing'.",
+        "4.5s – 6.0s: Quick flash of the ₹29 (vs ₹2,499) instant download page with text: 'Comment SECRET for the direct link before I archive this'.",
       ],
       lightingAndAudioTip:
         "Keep the video strictly 6 seconds so viewers loop it 2–3 times while reading the text overlay. Toggle ON 'Trial Reel' before posting so Instagram pushes it to non-followers!",
@@ -439,36 +439,36 @@ export const INITIAL_EBOOK_RESULT: EbookGenerationResult = {
       {
         triggerType: "1. Daily Snack Price-Comparison Trigger (Zero-Resistance Impulse)",
         overlayText:
-          "\"1 Plate Momos = Rs 60 (Gone in 5 mins). This 1% Underground Vault = Rs 29 (Gives you 5 verified USD royalty & B2B portals nobody shares for free). Choice is yours.\"",
+          "\"1 Plate Momos = Rs 60 (Gone in 5 mins). This Classified 1% Dossier = Rs 29 (Gives you 5 verified backdoor portals & psychological scripts nobody shares for free). Choice is yours.\"",
         whyItConverts:
-          "Makes ₹29 feel smaller than street food while promising rare, non-generic portals (ElevenLabs, IndiaMART, UserTesting).",
+          "Makes ₹29 feel smaller than street food while promising rare, non-generic systems.",
       },
       {
         triggerType: "2. The 'No Affiliate / No Generic Fluff' Hook",
         overlayText:
-          "\"Tired of everyone telling you to do affiliate marketing or surveys? Here are 5 underground USD royalty & B2B portals that actually work in 2026–2027.\"",
+          "\"Tired of everyone telling you to do affiliate marketing or surveys? Here are 5 classified client-closing, Trial-Reel & USD testing loopholes that actually work in 2026–2027.\"",
         whyItConverts:
           "Immediately stands out from 99% of Instagram reels by calling out how tired people are of generic advice.",
       },
       {
         triggerType: "3. Extreme FOMO / Gatekeeping Hook",
         overlayText:
-          "\"From getting paid passive USD royalties for your voice on ElevenLabs to the IndiaMART factory trick & free Harvard certificates—comment 'VAULT' before I delete this.\"",
+          "\"From the Dark Psychology WhatsApp closing script to Google Maps clinic takeovers, free Harvard credentials & ₹150 pharmacy salts—comment 'SECRET' before I archive this.\"",
         whyItConverts:
           "Names specific, intriguing mechanisms that force curious viewers to save the reel and comment immediately.",
       },
     ],
-    autoDmCaption: `Everyone on Instagram repeats the same tired advice ("do affiliate marketing, do surveys, or cold-DM random pages"). Nobody shares the real underground portals that actually work in 2026–2027! 🤫✨\n\nInside this 12pt Simple-English Underground Vault, I have put the exact step-by-step map with 100% verified links:\n✅ System 1: Passive USD Voice Royalties on ElevenLabs Voice Library (Record once for 30 mins, zero followers needed)\n✅ System 2: The IndiaMART TrustSEAL Factory Arbitrage (Where zero creators are competing for ₹2,999 catalog orders)\n✅ System 3: $10 Per 15-Minute Speak-Out-Loud Website Testing (UserTesting, Trymata & Dscout Screener Bypass Trick)\n✅ System 4: Adobe Stock AI Cultural Vectors & PromptBase USD Marketplace\n✅ System 5: Free Verified Harvard CS50x & Tata/JPMorgan Forage Certificates + ₹150 Indian Pharmacy Generic Salt Bible\n\nToday you can get the complete 12pt PDF for just ₹29 (cheaper than a plate of momos—resets to ₹2,499 tonight).\n\n👉 Comment "VAULT" right now and my Auto-DM will send you the instant download link within 5 seconds!`,
+    autoDmCaption: `Everyone on Instagram repeats the same tired advice ("do affiliate marketing, do surveys, or beg for followers"). Nobody shares the real classified systems that actually work in 2026–2027! 🤫✨\n\nInside this 12pt Simple-English Classified Dossier, I have put the exact step-by-step map with 100% verified links:\n✅ System 1: Dark Psychology WhatsApp DM Closing & Google Maps Local Clinic Takeover (50% UPI advance lock)\n✅ System 2: The 6-Second Trial-Reel & Auto-DM Micro-Dossier Funnel (0 followers needed)\n✅ System 3: $10 Per 15-Minute Speak-Out-Loud Website Testing (UserTesting & Prolific Narration Formula)\n✅ System 4: Adobe Stock AI 60% Copy-Space Commercial Backgrounds\n✅ System 5: Free Verified Harvard CS50x & Tata/JPMorgan Forage Credentials + ₹150 Indian Pharmacy Generic Salt Bible\n\nToday you can get the complete 12pt PDF for just ₹29 (cheaper than a plate of momos—resets to ₹2,499 tonight).\n\n👉 Comment "SECRET" right now and my Auto-DM will send you the instant download link within 5 seconds!`,
     seoKeywords: [
       "underrated websites that feel illegal to know",
-      "elevenlabs voice library passive income india",
+      "whatsapp client closing psychology india",
       "usertesting india review 2026",
       "free verified certificates harvard tata forage",
-      "indiamart business ideas without investment",
+      "google maps local business client hunting",
       "adobe stock ai contributor india",
       "indian pharmacy skincare dupes list",
       "unique side hustles india no affiliate",
-      "how to find b2b clients in india",
+      "instagram trial reels auto dm funnel",
       "secret portals for students in india",
     ],
     hashtags: [
@@ -480,4 +480,5 @@ export const INITIAL_EBOOK_RESULT: EbookGenerationResult = {
     ],
   },
 };
+
 

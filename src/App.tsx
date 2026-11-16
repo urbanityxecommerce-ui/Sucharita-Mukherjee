@@ -30,6 +30,8 @@ import {
 import {
   generateInstantReelClientSide,
   generateInstantEbookClientSide,
+  generateLiveReelFromBrowserAI,
+  generateLiveEbookFromBrowserAI,
 } from "./utils/instantClientGenerator";
 import { ReelEngineTab } from "./components/ReelEngineTab";
 import { EbookGeneratorTab } from "./components/EbookGeneratorTab";
@@ -38,12 +40,17 @@ import {
   RoutineAndFilterTab,
   HistoryAndSavedTab,
 } from "./components/RoutineAndHistoryTab";
+import {
+  PWAInstallButton,
+  AndroidIframeInstallNotice,
+  OfflineIndicator,
+} from "./components/PWAInstallButton";
 import { downloadEbookAsPDF } from "./utils/pdfExporter";
 
 const STORAGE_KEYS = {
-  CHECKLIST: "glowcash_checklist_v3",
+  CHECKLIST: "glowcash_checklist_v4",
   PHASE_DAY: "glowcash_phase_day_v1",
-  HISTORY: "glowcash_history_v8",
+  HISTORY: "glowcash_history_v9",
 };
 
 export default function App() {
@@ -61,12 +68,15 @@ export default function App() {
 
   const [reelGenCount, setReelGenCount] = useState(1);
   const [ebookGenCount, setEbookGenCount] = useState(1);
+  const [recentEbookTitles, setRecentEbookTitles] = useState<string[]>([
+    INITIAL_EBOOK_RESULT.ebook.title,
+  ]);
 
   const [reelStatusMsg, setReelStatusMsg] = useState(
     "2026 Live AI Ready · Click Generate, Surprise Me, or Auto-Boost"
   );
   const [ebookStatusMsg, setEbookStatusMsg] = useState(
-    "2026 Mastermind AI Ready · Choose Category, Topic, or Auto-Boost"
+    "2026 Grey-Hat Oracle AI Ready · Choose Category, Topic, or Surprise Me"
   );
 
   // Daily Checklist state persisted in localStorage
@@ -170,7 +180,7 @@ export default function App() {
     setPhaseDay(1);
   };
 
-  // Generate Viral Reel Pack (Tab 1) via Live 2026 AI Engine with 16s timeout + instant fallback
+  // Generate Viral Reel Pack (Tab 1) via Live 2026 AI Engine + Direct Browser AI fallback for Netlify
   const handleGenerateReel = async (
     themeInput: string,
     categoryFilter: string,
@@ -182,15 +192,16 @@ export default function App() {
     setReelGenCount(nextVariation);
     setReelStatusMsg(
       isRetry
-        ? "AI generating a brand-new 2026 viral outfit angle..."
-        : "AI generating your custom 2026 Viral Reel Pack..."
+        ? "Live AI generating a 100% brand-new 2026 viral outfit & Meesho combo..."
+        : "Live AI generating your custom 2026 Viral Reel Pack..."
     );
 
     let data: ReelGenerationResult | null = null;
+    const previousTitle = reelResult?.concept?.title || "";
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 16000);
+      const timeoutId = setTimeout(() => controller.abort(), 26000);
 
       const response = await fetch("/api/generate-reel", {
         method: "POST",
@@ -200,6 +211,7 @@ export default function App() {
           categoryFilter,
           backgroundDesc,
           variationIndex: nextVariation,
+          avoidPreviousTitle: previousTitle,
         }),
         signal: controller.signal,
       });
@@ -213,19 +225,28 @@ export default function App() {
         }
       }
     } catch {
-      // Fall back to instant client generator if offline or timed out
+      // Server route unreachable (e.g. static Netlify host) — run Live Browser AI next
     }
 
     if (!data || !data.concept) {
-      data = generateInstantReelClientSide(
-        themeInput,
-        categoryFilter,
-        backgroundDesc,
-        nextVariation
-      );
+      try {
+        data = await generateLiveReelFromBrowserAI(
+          themeInput,
+          categoryFilter,
+          backgroundDesc,
+          nextVariation,
+          previousTitle
+        );
+      } catch {
+        data = generateInstantReelClientSide(
+          themeInput,
+          categoryFilter,
+          backgroundDesc,
+          nextVariation
+        );
+      }
     }
 
-    // Double client-side guarantee: ensure zero AI slop hooks/hashtags & up-to-date look-preview prompts
     const howToCombine =
       data.concept.lookTransformationFormula?.howToCombineAllFourPieces ||
       "Wear Piece 1 fitted at the waist with Piece 2 high-waisted bottom, layer Piece 3, and finish with Piece 4.";
@@ -252,7 +273,9 @@ export default function App() {
       minute: "2-digit",
       second: "2-digit",
     });
-    setReelStatusMsg(`Live AI Pack #${nextVariation} Ready (${timeStr})`);
+    setReelStatusMsg(
+      `✓ ${data.providerUsed || "Live AI"} · Pack #${nextVariation} Ready (${timeStr})`
+    );
 
     const newRecord: HistoryRecord = {
       id: data.id,
@@ -279,7 +302,7 @@ export default function App() {
     }));
   };
 
-  // Generate 1% Ebook + Psychological Trigger Reel (Tab 2) via Live 2026 Mastermind AI Engine
+  // Generate 1% Ebook + Psychological Trigger Reel (Tab 2) via Live 2026 Mastermind AI Engine + Direct Browser AI for Netlify
   const handleGenerateEbook = async (
     topicInput: string,
     priceDisplay: string,
@@ -293,15 +316,22 @@ export default function App() {
     setEbookGenCount(nextVariation);
     setEbookStatusMsg(
       isRetry
-        ? "AI writing a fresh Zero-Fluff 5-Chapter Ebook & Mastermind Map..."
-        : `AI writing your ${priceDisplay} White-Label Ebook & 6s Reel Kit...`
+        ? "Live AI writing a 100% brand-new 5-Chapter Ebook & Mastermind Map..."
+        : `Live AI writing your ${priceDisplay} White-Label Ebook & 6s Reel Kit...`
     );
 
     let data: EbookGenerationResult | null = null;
+    const previousEbookTitle = [
+      ebookResult?.ebook?.title || "",
+      ebookResult?.ebook?.chapters?.[0]?.title || "",
+      ...recentEbookTitles.slice(0, 5),
+    ]
+      .filter(Boolean)
+      .join(" | ");
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 16000);
+      const timeoutId = setTimeout(() => controller.abort(), 28000);
 
       const response = await fetch("/api/generate-ebook", {
         method: "POST",
@@ -313,6 +343,7 @@ export default function App() {
           anchorPriceDisplay,
           autoDmTrigger,
           variationIndex: nextVariation,
+          avoidPreviousTitle: previousEbookTitle,
         }),
         signal: controller.signal,
       });
@@ -326,27 +357,46 @@ export default function App() {
         }
       }
     } catch {
-      // Fall back to instant client generator if offline
+      // Server route unreachable (e.g. static Netlify host) — run Live Browser AI next
     }
 
     if (!data || !data.ebook) {
-      data = generateInstantEbookClientSide(
-        topicInput,
-        priceDisplay,
-        anchorPriceDisplay,
-        autoDmTrigger,
-        nextVariation,
-        category
-      );
+      try {
+        data = await generateLiveEbookFromBrowserAI(
+          topicInput,
+          priceDisplay,
+          anchorPriceDisplay,
+          autoDmTrigger,
+          nextVariation,
+          category,
+          previousEbookTitle
+        );
+      } catch {
+        data = generateInstantEbookClientSide(
+          topicInput,
+          priceDisplay,
+          anchorPriceDisplay,
+          autoDmTrigger,
+          nextVariation,
+          category
+        );
+      }
     }
 
     setEbookResult(data);
+    setRecentEbookTitles((prev) => [
+      data!.ebook.title,
+      ...(data!.ebook.chapters?.[0]?.title ? [data!.ebook.chapters[0].title] : []),
+      ...prev.slice(0, 6),
+    ]);
     const timeStr = new Date().toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
     });
-    setEbookStatusMsg(`Mastermind Ebook #${nextVariation} Ready (${timeStr})`);
+    setEbookStatusMsg(
+      `✓ ${data.providerUsed || "Live AI"} · Ebook #${nextVariation} Ready (${timeStr})`
+    );
 
     const newRecord: HistoryRecord = {
       id: data.id,
@@ -440,7 +490,7 @@ export default function App() {
       idea.title,
       idea.category,
       BACKGROUND_PRESETS[0].description,
-      true
+      false
     );
   };
 
@@ -449,7 +499,8 @@ export default function App() {
   ).length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0B0711] text-[#F9F5FF]">
+    <div className="min-h-screen flex flex-col bg-[#0B0711] text-[#F9F5FF] pb-20 sm:pb-0">
+      <AndroidIframeInstallNotice />
       {/* Clean Single Top Header Bar */}
       <header className="bg-[#120B1D] border-b border-pink-500/25 no-print">
         <div className="max-w-[1160px] mx-auto px-4 md:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
@@ -471,7 +522,8 @@ export default function App() {
             </div>
           </button>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <PWAInstallButton />
             {activeTab === "tab2" ? (
               <button
                 type="button"
@@ -503,6 +555,7 @@ export default function App() {
           </div>
         </div>
       </header>
+      <OfflineIndicator />
 
       {/* Main Centered Container — 5 Clear Main Tabs, One View at a Time */}
       <main className="flex-1 w-full max-w-[1160px] mx-auto px-4 md:px-6 py-5 space-y-5">
@@ -682,6 +735,79 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Native Android Mobile Bottom Navigation Bar (Visible on Mobile Screens) */}
+      <nav
+        aria-label="Mobile Bottom App Navigation"
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#120B1D]/95 backdrop-blur-md border-t border-pink-500/30 grid grid-cols-5 px-1 py-1.5 no-print shadow-2xl"
+      >
+        <button
+          type="button"
+          onClick={() => setActiveTab("tab1")}
+          className={`flex flex-col items-center justify-center py-1 rounded-xl transition-all cursor-pointer ${
+            activeTab === "tab1"
+              ? "text-pink-400 font-bold bg-pink-500/15"
+              : "text-pink-200/70"
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          <span className="text-[10px] mt-0.5">Reel AI</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("tab2")}
+          className={`flex flex-col items-center justify-center py-1 rounded-xl transition-all cursor-pointer ${
+            activeTab === "tab2"
+              ? "text-pink-400 font-bold bg-pink-500/15"
+              : "text-pink-200/70"
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          <span className="text-[10px] mt-0.5">Ebook AI</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("vault")}
+          className={`flex flex-col items-center justify-center py-1 rounded-xl transition-all cursor-pointer ${
+            activeTab === "vault"
+              ? "text-pink-400 font-bold bg-pink-500/15"
+              : "text-pink-200/70"
+          }`}
+        >
+          <Search className="w-4 h-4" />
+          <span className="text-[10px] mt-0.5">Ideas</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("routine")}
+          className={`flex flex-col items-center justify-center py-1 rounded-xl transition-all cursor-pointer ${
+            activeTab === "routine"
+              ? "text-pink-400 font-bold bg-pink-500/15"
+              : "text-pink-200/70"
+          }`}
+        >
+          <CheckSquare className="w-4 h-4" />
+          <span className="text-[10px] mt-0.5">
+            Routine ({completedRoutineCount}/4)
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("history")}
+          className={`flex flex-col items-center justify-center py-1 rounded-xl transition-all cursor-pointer ${
+            activeTab === "history"
+              ? "text-pink-400 font-bold bg-pink-500/15"
+              : "text-pink-200/70"
+          }`}
+        >
+          <History className="w-4 h-4" />
+          <span className="text-[10px] mt-0.5">Saved ({history.length})</span>
+        </button>
+      </nav>
     </div>
   );
 }

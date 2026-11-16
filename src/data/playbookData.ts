@@ -137,32 +137,32 @@ export interface HistoryRecord {
 export const EBOOK_CATEGORIES = [
   {
     id: 'All',
-    label: 'All 2026–2027 Underground Vaults',
-    shortDesc: 'Zero affiliate, zero generic fluff — 100% verified insider systems',
+    label: 'All 2026–2027 Classified 1% Dossiers',
+    shortDesc: 'Dark psychology, backdoor portals & zero-fluff insider systems',
   },
   {
     id: '2026 Real Pocket Cashflow & Micro-Business',
-    label: '💸 Underground USD Royalties & Bounties (No Affiliate/No Selling)',
-    shortDesc: 'ElevenLabs Voice Royalties, $10/15-min UserTesting, Adobe AI Vectors & PromptBase',
+    label: '💸 6-Second Trial-Reel Funnels, Digital Planners & USD Bounties',
+    shortDesc: 'Snack-Price Auto-DM Funnels, Pinterest-to-Gumroad, Faceless YouTube & $10 UX Tests',
   },
   {
     id: 'Client Hunting & Zero-Follower Traffic',
-    label: '🎯 IndiaMART & Google Maps B2B Client Arbitrage (0 Followers)',
-    shortDesc: 'Find Surat/Jaipur wholesale factory owners on IndiaMART & No-Website local clinics',
+    label: '🎯 Dark Psychology WhatsApp Closing & Google Maps Takeover',
+    shortDesc: 'Close ₹2,999–₹4,999 deals via Google Maps No-Website clinics & Meta Ad Library',
   },
   {
     id: 'Free Certifications & Career Shortcuts',
-    label: '🎓 Free Harvard, Tata Forage & Google Certificates + Direct HR Filter',
+    label: '🎓 Free Harvard, Tata Forage & Google Credentials + Direct HR Backdoor',
     shortDesc: 'CS50x free link, Tata/JPMorgan Forage simulations & LinkedIn 24hr post filter',
   },
   {
     id: 'Underrated 1% Life, Study & AI Hacks',
-    label: '🧠 1% Secret Websites, Free Pro Perks & 21-Day English Fluency',
-    shortDesc: 'GitHub Student Pack, NotebookLM Audio, Perplexity & Free AI Voice Tutors',
+    label: '🧠 15 Zero-Cost AI Portals, Exam Hacks & Salary Negotiation Psychology',
+    shortDesc: 'NotebookLM Audio, Perplexity Academic, Anki Automation & +₹3L CTC Scripts',
   },
   {
     id: 'Skincare, Glow-Up & Styling Science',
-    label: '✨ ₹150 Indian Pharmacy Generic Salt Dupes & Body-Math Science',
+    label: '✨ ₹150 Indian Pharmacy Generic Salt Bible & 30:70 Proportion Science',
     shortDesc: 'Chemist generic dupes (Aziderm, Glyco-6, Hyalugel) for ₹3,500 luxury serums',
   },
 ];
@@ -521,28 +521,46 @@ export const CURATED_REEL_IDEA_BANK: CuratedReelSeed[] = [
 
 export const HIGH_VALUE_EBOOK_PRESETS = [
   {
-    id: 'quiet-ai-income-2026',
-    category: '2026 Real Pocket Cashflow & Micro-Business',
-    title: '💸 5 Fact-Checked USD & B2B Portals (Honest ₹0 Free vs Paid Rules + 50% Advance Protection)',
-    topic: '5 Fact-Checked 2026–2027 Income Systems (Zero Fake Filters): IndiaMART B2B 1-Photo Watermark + 50% UPI Advance Arbitrage (dir.indiamart.com Real City + Manufacturer Filter), Voquent Free Voice Demos vs ElevenLabs Creator PVC Truth, $10/15-Min UserTesting & Prolific (KYC PayPal), and Adobe Stock 4MP AI Vectors',
-    recommendedPrice: '₹29',
-    anchorPrice: '₹2,499',
-    triggerWord: 'VAULT',
-  },
-  {
-    id: 'client-hunting-mastermind-2026',
+    id: 'dark-psychology-whatsapp-closing-2026',
     category: 'Client Hunting & Zero-Follower Traffic',
-    title: '🎯 The IndiaMART & Google Maps 50%-Advance Client System (₹2,999/Catalog)',
-    topic: 'How to Use IndiaMART Real Left-Sidebar Filters (dir.indiamart.com -> City: Surat/Jaipur -> Business Type: Manufacturer -> TrustSEAL Verified) + The 1-Photo Diagonal Watermark + 50% UPI Advance Rule to Close ₹2,999 AI Catalog Deals Safely Without Making 15 Pages for Free',
+    title: '🕵️‍♂️ Dark Psychology of WhatsApp DM Closing (5 Triggers for ₹4,999 Deals)',
+    topic: 'The Dark Psychology of WhatsApp DM Closing & High-Ticket Freelance Deals: 5 Behavioral Triggers (Visual Loss-Aversion Audit, ₹250 Micro-Yes Foot-in-the-Door, Meta Ad Library Active-Spender Hijack & 3-Tier Decoy Pricing) That Make Clients Pay 50% UPI Advance in 15 Minutes',
     recommendedPrice: '₹49',
     anchorPrice: '₹2,999',
-    triggerWord: 'CLIENT',
+    triggerWord: 'CLOSE',
+  },
+  {
+    id: 'trial-reel-micro-dossier-funnel-2026',
+    category: '2026 Real Pocket Cashflow & Micro-Business',
+    title: '⚡ The 6-Second Trial-Reel & Auto-DM Micro-Dossier Funnel (0 Followers)',
+    topic: 'The 6-Second Instagram Trial-Reel & Auto-DM Micro-Dossier Funnel: How Anonymous 0-Follower Pages Use Snack-Price Psychology, 300% Loop Retention & SuperProfile/Cosmofeed Instant UPI Checkout to Generate Automated Daily Sales',
+    recommendedPrice: '₹29',
+    anchorPrice: '₹2,499',
+    triggerWord: 'FUNNEL',
+  },
+  {
+    id: 'google-maps-local-clinic-takeover-2026',
+    category: 'Client Hunting & Zero-Follower Traffic',
+    title: '📍 Google Maps "40+ Reviews, No-Website" Local Clinic & Salon Takeover',
+    topic: 'The Google Maps High-Review No-Website Local Business Exploit: Exact Click-by-Click System to Find Cash-Rich Dental Clinics, Skin Studios & Salons and Close ₹3,999 WhatsApp Appointment Mini-Sites in 48 Hours',
+    recommendedPrice: '₹49',
+    anchorPrice: '₹2,999',
+    triggerWord: 'MAPS',
+  },
+  {
+    id: 'pinterest-gumroad-digital-planners-2026',
+    category: '2026 Real Pocket Cashflow & Micro-Business',
+    title: '📌 Pinterest-to-Gumroad & Notion Digital Planner Arbitrage (Canva Bulk-Create)',
+    topic: 'Pinterest-to-Gumroad & Etsy Digital Planner Arbitrage: Creating 50 Aesthetic Notion & Printable Trackers in 20 Minutes Using Canva Bulk-Create + Free Pinterest Search Traffic for Passive USD & UPI Sales',
+    recommendedPrice: '₹29',
+    anchorPrice: '₹1,999',
+    triggerWord: 'PLANNER',
   },
   {
     id: 'free-certifications-vault-2026',
     category: 'Free Certifications & Career Shortcuts',
-    title: '🎓 12 Verified Free Harvard, Google, Tata & JPMorgan Certificates + Direct HR Filter',
-    topic: '12 Verified 100% Free Certificates & Virtual Job Simulations (Harvard CS50x Direct Portal cs50.harvard.edu/x, Tata/JPMorgan/Deloitte on TheForage.com, Google Skillshop & Govt SWAYAM) + The LinkedIn "Past 24 Hours Posts" Filter to Message Hiring Managers Directly',
+    title: '🎓 12 Verified Free Harvard, Google, Tata & JPMorgan Credentials + HR Backdoor',
+    topic: '12 Verified 100% Free Certificates & Virtual Job Simulations (Harvard CS50x Direct Portal cs50.harvard.edu/x, Tata/JPMorgan/Deloitte on TheForage.com, Google Skillshop & Govt SWAYAM) + The LinkedIn "Past 24 Hours Posts" Filter to Message Founders Directly',
     recommendedPrice: '₹19',
     anchorPrice: '₹1,999',
     triggerWord: 'CERT',
@@ -550,7 +568,7 @@ export const HIGH_VALUE_EBOOK_PRESETS = [
   {
     id: 'pharmacy-skincare-glowup',
     category: 'Skincare, Glow-Up & Styling Science',
-    title: '✨ The ₹150 Indian Pharmacy Generic Salt Bible (Chemist Equivalents for ₹3,500 Serums)',
+    title: '✨ The ₹150 Indian Pharmacy Generic Salt Bible (Chemist Dupes for ₹3,500 Serums)',
     topic: 'Exact ₹120–₹250 Indian Medical Store Regulated Generic Salt Formulations (Aziderm 10%/20% Azelaic Acid, Glyco-6, Hyalugel, Sebogel + 1mg.com Salt Filter & Nighttime SPF Rules) for ₹3,500 Luxury Serums + Warm Indian Skin Undertone Science',
     recommendedPrice: '₹19',
     anchorPrice: '₹1,499',
@@ -559,8 +577,8 @@ export const HIGH_VALUE_EBOOK_PRESETS = [
   {
     id: 'secret-ai-life-hacks-2026',
     category: 'Underrated 1% Life, Study & AI Hacks',
-    title: '🧠 15 Verified Free AI Portals, Student Pro Perks & 48-Hour Exam Mastery',
-    topic: '15 Verified Free AI Websites & Secret Portals (GitHub Education Pack $2,000+ Free Software, Google NotebookLM Audio Exam Podcasts, Perplexity Deep Research, SciSpace & Consensus) That Do 6 Hours of Work in 15 Minutes',
+    title: '🧠 15 Zero-Cost AI Research Portals & 48-Hour Exam-Crushing Protocol',
+    topic: '15 Verified Free AI Websites & Secret Portals (Google NotebookLM Audio Exam Podcasts, Perplexity Academic Research, SciSpace, Consensus, Anki CSV Automation & GitHub Education Pack) That Do 6 Hours of Work in 15 Minutes',
     recommendedPrice: '₹29',
     anchorPrice: '₹1,999',
     triggerWord: 'SECRET',
@@ -568,8 +586,8 @@ export const HIGH_VALUE_EBOOK_PRESETS = [
   {
     id: 'english-fluency-interview-2026',
     category: 'Underrated 1% Life, Study & AI Hacks',
-    title: '🗣️ Speak High-Status Fluent English & Crack HR Salary Rounds in 21 Days',
-    topic: 'Zero-Coaching English Fluency & Corporate Interview Playbook: Exact Free AI Voice Roleplay Prompts, 50 High-Status Corporate Sentences, and Word-for-Word Answers to Tough HR Salary Negotiation Questions',
+    title: '🗣️ Dark Psychology of Executive Communication & +₹3L HR Salary Negotiation',
+    topic: 'Dark Psychology of Magnetic Communication, Executive Confidence & High-Stakes HR Salary Negotiation: 3-Second Tactical Silence, 50 High-Status Corporate Phrases, and Word-for-Word Scripts That Add ₹2L–₹4L to Your CTC Offer',
     recommendedPrice: '₹29',
     anchorPrice: '₹1,999',
     triggerWord: 'FLUENT',
@@ -587,62 +605,87 @@ export const INITIAL_CHECKLIST_ITEMS = [
   {
     id: 'block-2-afternoon',
     blockLabel: 'Block 2 · Afternoon (60 Mins)',
-    taskTitle: 'Post 1 6-Second Trial Reel for Your Fact-Checked 1% Ebook',
+    taskTitle: 'Post 1 6-Second Trial Reel for Your Classified 1% Dossier',
     detail: 'Record a 6-second dark aesthetic screen scroll of your White-Label 12pt PDF → Add the Snack Price Comparison overlay → Toggle ON Trial Reel → Connect Auto-DM.',
     completed: false,
   },
   {
     id: 'block-3-evening-ai',
     blockLabel: 'Block 3A · Evening (40 Mins)',
-    taskTitle: 'Execute 1 Verified Portal Task (UserTesting / Voquent / Adobe Stock / Forage)',
-    detail: 'Spend 40 minutes on UserTesting/Prolific screeners, Voquent free voice demos, Adobe Stock 4MP AI vectors, or a free Tata/Harvard certification module.',
+    taskTitle: 'Execute 1 Verified Portal Task (UserTesting / Prolific / Forage / Canva Bulk)',
+    detail: 'Spend 40 minutes on UserTesting/Prolific screeners, Pinterest-to-Gumroad digital trackers, Adobe Stock 4MP AI vectors, or a free Tata/Harvard certification module.',
     completed: false,
   },
   {
     id: 'block-3-evening-dm',
     blockLabel: 'Block 3B · Evening (20 Mins)',
-    taskTitle: 'Send 5 IndiaMART 1-Photo Watermarked Samples (50% Advance Rule)',
-    detail: 'Use dir.indiamart.com (City: Surat/Jaipur -> Business Type: Manufacturer -> TrustSEAL Verified) → Save 1 public photo → Send 1 diagonal-watermarked 4K sample on WhatsApp → Collect 50% UPI advance before making full catalog.',
+    taskTitle: 'Send 5 Watermarked Loss-Aversion Previews (50% UPI Advance Lock)',
+    detail: 'Use Google Maps (40+ Reviews + No Website) or Meta Ad Library (Active Ads) → Save 1 public photo → Send 1 diagonal-watermarked 4K preview on WhatsApp → Collect 50% UPI advance before full delivery.',
     completed: false,
   },
 ];
 
 /**
- * Category-Aware Idea Booster: Turns any raw keyword into 4 Extreme-FOMO Fact-Checked Angles
+ * Category-Aware & Custom-Topic-Aware Idea Booster: Turns any raw keyword into 4 Extreme-FOMO Fact-Checked Angles
+ * NEVER overwrites custom user queries with unrelated presets!
  */
 export function boostUserIdeaOptions(rawInput: string, category: string): string[] {
   const clean = rawInput.trim();
+  const cleanLower = clean.toLowerCase();
   const catLower = (category || '').toLowerCase();
+
+  // 1. Check ONLY if the user explicitly typed chat agent / outlier / oneforma
+  if (
+    /\b(chat\s*agent|chat\s*support|non[- ]?bidding\s*chat|outlier|oneforma|dataannotation)\b/i.test(
+      cleanLower
+    )
+  ) {
+    return [
+      '10 Verified Non-Bidding Chat Agent & AI Text Evaluation Websites for Indians in 2026–2027 (Direct Skill Assessment & Weekly Payouts)',
+      'Zero-Bidding Remote Chat & Community Moderation Playbook: ModSquad, Concentrix Remote Chat, Chegg Q&A & TELUS Digital',
+      'The 2026–2027 Anti-Upwork Blueprint: 10 Direct-Approval Portals Where Indians Earn From Day 1 Without Proposal Bidding',
+      'How to Pass Remote Chat & Bilingual Evaluation Assessments on Your First Attempt (With Word-for-Word Rubric Templates)',
+    ];
+  }
+
+  // 2. If the user entered any specific custom query (2+ words), keep 100% fidelity to their custom topic!
+  if (clean.split(/\s+/).length >= 2) {
+    return [
+      `The Classified 1% Grey-Hat Dossier for: ${clean} (5 Unconventional Loopholes, Direct Links & Copy-Paste Scripts)`,
+      `The 99% Illusion vs. 1% Reality of "${clean}": Exact Step-by-Step Execution & Behavioral Triggers That Actually Work`,
+      `Zero-Competition 2026–2027 Blueprint for: ${clean} (Verified Portals, Real UI Click-Paths & Daily Action System)`,
+      `How to Master & Monetize "${clean}" in 14 Days (With Word-for-Word Jedi Mind-Trick Scripts & Safety Locks)`,
+    ];
+  }
 
   if (
     catLower.includes('cert') ||
     catLower.includes('career') ||
-    clean.toLowerCase().includes('cert') ||
-    clean.toLowerCase().includes('job') ||
-    clean.toLowerCase().includes('resume')
+    cleanLower.includes('cert') ||
+    cleanLower.includes('job') ||
+    cleanLower.includes('resume')
   ) {
     const base = clean || 'Free Verified Certifications & Remote Career';
     return [
-      `12 Verified Free Certificates for ${base} (Harvard CS50x Direct Link cs50.harvard.edu/x, Tata/JPMorgan on TheForage.com & Google Skillshop)`,
-      `The LinkedIn 'Past 24 Hours Posts' Boolean Filter: How to Message Hiring Managers Directly for ${base} Without Waiting in 5,000-Applicant Queues`,
-      `How to Legally List Free Fortune-500 Virtual Job Simulations (Deloitte, BCG, Tata on TheForage.com) as Project Experience on Your Resume`,
-      `Stop Paying ₹25,000 for Coaching! The Complete Free ${base} Portal Map (SWAYAM IIT Modules + GitHub Student Pack) + Cold DM Scripts`,
+      `12 Verified Free Credentials for ${base} (Harvard CS50x Direct Link cs50.harvard.edu/x, Tata/JPMorgan on TheForage.com & Google Skillshop)`,
+      `The LinkedIn 'Past 24 Hours Posts' Boolean Backdoor: How to Message Founders Directly for ${base} & Bypass 2,000-Applicant Queues`,
+      `How to Legally List Free Fortune-500 Virtual Job Simulations (Deloitte, BCG, Tata on TheForage.com) as Work Experience on Your CV`,
+      `The +₹3 Lakh CTC Salary Negotiation Mind-Trick for ${base}: Word-for-Word HR Scripts & Cold DM Templates`,
     ];
   }
 
   if (
     catLower.includes('client') ||
     catLower.includes('traffic') ||
-    clean.toLowerCase().includes('client') ||
-    clean.toLowerCase().includes('buyer') ||
-    clean.toLowerCase().includes('indiamart')
+    cleanLower.includes('client') ||
+    cleanLower.includes('buyer')
   ) {
-    const base = clean || 'Finding High-Paying B2B Clients (Zero Competition)';
+    const base = clean || 'Closing High-Paying Clients With 0 Followers';
     return [
-      `The IndiaMART Real Filter Secret for ${base}: Use dir.indiamart.com (City: Surat/Jaipur + Business Type: Manufacturer + TrustSEAL) & Close ₹2,999 Deals`,
-      `The '1 Watermarked Photo + 50% UPI Advance' Rule for ${base}: How to Close Wholesale Manufacturers Without Ever Working for Free`,
-      `Google Maps '20+ Reviews + No Website' Filter for ${base}: Exact Click-by-Click Path to Close Local Clinics & Showrooms on WhatsApp`,
-      `Meta Ad Library Active-Spender Filter (facebook.com/ads/library): Find Indian Brands Already Spending Money Today & Pitch a Watermarked Sample`,
+      `The Dark Psychology of WhatsApp DM Closing for ${base}: 5 Behavioral Triggers That Make Clients Pay 50% Advance in 15 Minutes`,
+      `The Google Maps '40+ Reviews, No-Website' Exploit for ${base}: Closing ₹3,999 Local Clinic & Salon Deals on WhatsApp`,
+      `Meta Ad Library Active-Spender Hijack (facebook.com/ads/library): Find Indian Brands Spending ₹50,000+/Mo & Pitch a Watermarked Sample`,
+      `The Micro-Creator Paid UGC & Brand Barter Backdoor: How to Land ₹3,000/Video Ad Deals With Under 1,000 Followers`,
     ];
   }
 
@@ -651,16 +694,15 @@ export function boostUserIdeaOptions(rawInput: string, category: string): string
     catLower.includes('income') ||
     catLower.includes('earning') ||
     catLower.includes('royalties') ||
-    clean.toLowerCase().includes('earn') ||
-    clean.toLowerCase().includes('money') ||
-    clean.toLowerCase().includes('usd')
+    cleanLower.includes('earn') ||
+    cleanLower.includes('money') ||
+    cleanLower.includes('usd')
   ) {
-    const base = clean || 'Fact-Checked USD & B2B Income Systems';
     return [
-      `5 Fact-Checked 2026–2027 Income Systems (${base}): IndiaMART 50%-Advance Catalogs, UserTesting $10 Tests, Voquent Free Voice Demos & Adobe 4MP Vectors`,
-      `How to Pass the UserTesting.com & Prolific.com Screener ($10 Per 15-Minute Speak-Out-Loud Test Paid via KYC Indian PayPal)`,
-      `Honest Voiceover & AI Voice Cloning Guide (${base}): Free Voquent.com Demos vs ElevenLabs Paid Creator PVC ($0.03/1,000 Chars Stripe Payout)`,
-      `The IndiaMART B2B 1-Photo Watermark Arbitrage (${base}): Real UI Filters & 50% UPI Advance Scripts That Work With 0 Followers`,
+      `The 6-Second Instagram Trial-Reel & Auto-DM Micro-Dossier Funnel: Turning ₹29–₹99 Impulse PDFs Into Automated Daily UPI Sales`,
+      `Pinterest-to-Gumroad & Etsy Digital Planner Arbitrage: Creating 50 Aesthetic Notion & Canva Trackers in 20 Minutes`,
+      `YouTube Faceless 'Search-Gap' & Software Comparison Channels: High-CPM AdSense + Affiliate Engine Without Showing Your Face`,
+      `5 Fact-Checked Global UX Testing & Academic Research Portals (UserTesting, Prolific, Dscout, Trymata & Respondent — $10/15-Min Tests)`,
     ];
   }
 
@@ -672,12 +714,12 @@ export function boostUserIdeaOptions(rawInput: string, category: string): string
     catLower.includes('glow') ||
     catLower.includes('ebook')
   ) {
-    const base = clean || 'Underrated 1% Life, Pharmacy Skincare & AI Shortcuts';
+    const base = clean || '1% Cognitive, Skincare & Career Shortcuts';
     return [
-      `The ₹150 Indian Pharmacy Generic Salt Bible (${base}): Exact Chemist Dupes (Aziderm, Glyco-6, Hyalugel) for ₹3,500 Luxury Brands`,
-      `15 Underrated Free AI Websites & Student Perks (${base}): GitHub Student Pack, NotebookLM Audio Podcasts & Perplexity Deep Research`,
-      `Speak High-Status Corporate English in 21 Days (${base}): Exact Free Voice AI Roleplay Prompts & 50 Interview Power Sentences`,
-      `The Zero-Fluff 2026–2027 Insider Vault for ${base}: Exact Verified Websites, Search Filters & 24-Hour Action Checklist`,
+      `15 Underrated Zero-Cost AI Study & Research Portals (${base}): Google NotebookLM Audio Podcasts, Perplexity Academic & Anki Automation`,
+      `The ₹150 Indian Pharmacy Generic Salt Bible (${base}): Exact Chemist Dupes (Aziderm, Glyco-6, Hyalugel) for ₹3,500 Luxury Serums`,
+      `Dark Psychology of Magnetic Communication & Executive Confidence (${base}): 3-Second Tactical Silence & 50 Power Phrases`,
+      `The 30:70 Visual Proportion & Warm Indian Undertone Styling Bible (${base}): Look 5 Inches Taller & Camera-Ready Under ₹999`,
     ];
   }
 
@@ -1342,9 +1384,10 @@ export function sanitizeMeeshoSearchTerm(
 
   const cleaned = rawKeyword
     .replace(
-      /\b(zodiac sign|date-night edition|date night edition|birth month|initial letter|overthinker|hopeless romantic|ambitious ceo|spotify playlist|villain era|soft heart|cold aura|height illusion hacks|strict desi mom approved|myntra vs meesho|dupe|2026|viral|edition|look \d|piece \d|outfit \d|under rs \d+|under ₹\d+)\b/gi,
+      /\b(100%\s*pure\s*english|pure\s*english|clean\s*english|exact\s*meesho\s*catalog\s*search\s*for|meesho\s*catalog\s*search|zodiac sign|date-night edition|date night edition|birth month|initial letter|overthinker|hopeless romantic|ambitious ceo|spotify playlist|villain era|soft heart|cold aura|height illusion hacks|strict desi mom approved|myntra vs meesho|dupe|2026|viral|edition|look \d|piece \d|outfit \d|under rs \d+|under ₹\d+)\b/gi,
       ''
     )
+    .replace(/100%/g, '')
     .replace(/[:()[\]"'—–-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -1439,7 +1482,10 @@ export function getRealTimeDailyStylingContext(variationOffset = 0) {
  * and enforces real Indian Gen-Z human creator tone, psychological Save/Share triggers, and high-search-volume tags.
  */
 const BANNED_SLOP_HOOK_REGEX =
-  /\b(feel the|own the|swipe up|wardrobe switch|match your mood|elevate your|unleash|step into|discover the|embrace your|shine bright|two vibes, one|upgrade your style|fashion statement|redefine your|unlock your|effortless elegance|radiate confidence|level up your wardrobe)\b/i;
+  /\b(feel the softness|own the chill|swipe up, match your mood|wardrobe switch|two vibes, one|step into elegance|unleash your inner|embrace the magic)\b/i;
+
+const BANNED_SLOP_HASHTAG_REGEX =
+  /^#(softheartstyle|coldauravibe|mooddress2026|reelstyleswitch|shinebright|fashionmagic)$/i;
 
 const VERIFIED_HIGH_VOLUME_INDIAN_HASHTAGS = [
   '#meeshofinds',
@@ -1453,15 +1499,14 @@ const VERIFIED_HIGH_VOLUME_INDIAN_HASHTAGS = [
   '#desiaesthetic',
   '#affordablestyling',
   '#meeshokurtiset',
-  '#indoWesternoutfits',
+  '#indowesternoutfits',
 ];
 
 export function isSlopHook(hook: string): boolean {
   if (!hook || typeof hook !== 'string') return true;
   const trimmed = hook.trim();
   const wordCount = trimmed.split(/\s+/).length;
-  // Commercial 4-6 word taglines like "Feel the softness, own the chill" are instant AI slop
-  if (wordCount < 8) return true;
+  if (wordCount < 5) return true;
   if (BANNED_SLOP_HOOK_REGEX.test(trimmed)) return true;
   return false;
 }
@@ -1478,20 +1523,23 @@ export function enforceMastermindViralReelPack(
   const p3 = searchTerms[2]?.exactKeyword || 'Oxidized Silver Kamarbandh Waist Chain';
   const p4 = searchTerms[3]?.exactKeyword || 'Vintage Faux Leather Shoulder Bag';
 
-  const shortP1 = p1.replace(/^Women\s+/i, '').split(' ').slice(0, 4).join(' ');
-  const shortP2 = p2.replace(/^Women\s+/i, '').split(' ').slice(0, 4).join(' ');
-  const shortP3 = p3.replace(/^Women\s+/i, '').split(' ').slice(0, 4).join(' ');
+  const shortP1 = p1.replace(/^Women\s+/i, '').split(' ').slice(0, 5).join(' ');
+  const shortP2 = p2.replace(/^Women\s+/i, '').split(' ').slice(0, 5).join(' ');
+  const shortP3 = p3.replace(/^Women\s+/i, '').split(' ').slice(0, 5).join(' ');
+  const shortP4 = p4.replace(/^Women\s+/i, '').split(' ').slice(0, 4).join(' ');
 
   const priceTag = (searchTerms[0]?.priceFilter || 'Under ₹349').split('·')[0].trim();
 
-  // Mastermind Human-Toned Psychological Hook Bank (Rotates dynamically & adapts to exact pieces)
+  // Dynamic fallback hooks that directly use the current 4 pieces + variationSeed so even fallbacks are never identical
   const mastermindHooksPool = [
-    `Stop wearing ${shortP1} with skinny jeans—pair it with ${shortP2} instead (${priceTag}) 😭`,
-    `I gatekept this ${priceTag} Meesho 4-piece outfit combo for months because it makes 5'0" girls look 5'5" 👀`,
-    `How 4 budget Meesho pieces (${priceTag}) look like a ₹4,500 Pinterest outfit—wait till you see Piece 3 ✨`,
-    `Send this to that best friend who always says "I have nothing to wear" 10 minutes before leaving 💀`,
-    `POV: You stopped buying random kurtis and started using this 4-piece body-proportion styling trick 🔥`,
-    `Why is nobody talking about how ${shortP1} + ${shortP3} completely changes your waist proportion?!`,
+    `Stop wearing ${shortP1} with basic leggings—pair it with ${shortP2} instead (${priceTag}) 😭`,
+    `I gatekept this ${priceTag} Meesho 4-piece combo (${shortP1} + ${shortP3}) because it makes 5'0" girls look 5'5" 👀`,
+    `How ${shortP1} + ${shortP2} (${priceTag}) looks like a ₹4,500 Pinterest outfit—wait till you see Piece 3 ✨`,
+    `Send this ${shortP1} + ${shortP4} combo to that bestie who says "I have nothing to wear" before every outing 💀`,
+    `POV: You stopped buying random kurtis and started using this 30:70 ${shortP1} + ${shortP2} proportion trick 🔥`,
+    `Why is nobody talking about how ${shortP1} + ${shortP3} completely transforms your waist & height proportion?!`,
+    `Found the exact ${priceTag} ${shortP1} + ${shortP2} combination that flatters every Indian skin tone & body shape ✨`,
+    `Never wear ${shortP1} untucked without ${shortP3}—here is the 4-piece styling math every girl needs to save 📌`,
   ];
 
   const offset = Math.abs(Number(variationSeed) || 0);
@@ -1513,28 +1561,35 @@ export function enforceMastermindViralReelPack(
     return candidate;
   });
 
-  // Clean & validate 5 real high-volume Indian Instagram algorithm hashtags (no fake invented camelCase tags!)
-  const p1Lower = `${p1} ${p2} ${conceptTitle}`.toLowerCase();
-  const dynamicRealHashtags: string[] = ['#meeshofinds'];
-  if (p1Lower.includes('kurti')) {
-    dynamicRealHashtags.push('#shortkurtistyling', '#kurtijeanscombo');
-  } else if (p1Lower.includes('shirt') || p1Lower.includes('vest') || p1Lower.includes('korean')) {
-    dynamicRealHashtags.push('#collegeoutfitideas', '#pintrestoutfitsindia');
-  } else {
-    dynamicRealHashtags.push('#indianoutfitideas', '#meeshohaul');
-  }
-  if (p1Lower.includes('5\'0') || p1Lower.includes('height') || p1Lower.includes('bootcut') || p1Lower.includes('high waist')) {
-    dynamicRealHashtags.push('#petitefashionindia');
-  } else {
-    dynamicRealHashtags.push('#collegeoutfitideas');
-  }
-  dynamicRealHashtags.push('#meeshohaul', '#indianoutfitideas', '#affordablestyling');
+  // Preserve AI's generated hashtags (cleaned to lowercase #tag), filtering only banned fake slop tags
+  const aiHashtags = Array.isArray(rawReelPack?.trendingHashtags)
+    ? rawReelPack!.trendingHashtags
+        .map((t) => {
+          const clean = String(t || '')
+            .trim()
+            .replace(/\s+/g, '')
+            .toLowerCase();
+          return clean.startsWith('#') ? clean : clean ? `#${clean}` : '';
+        })
+        .filter((t) => t.length > 2 && !BANNED_SLOP_HASHTAG_REGEX.test(t))
+    : [];
 
-  const uniqueRealHashtags = Array.from(new Set(dynamicRealHashtags)).slice(0, 5);
+  const p1Lower = `${p1} ${p2} ${conceptTitle}`.toLowerCase();
+  const dynamicBackupHashtags: string[] = [...aiHashtags];
+  if (p1Lower.includes('kurti') || p1Lower.includes('kurta')) {
+    dynamicBackupHashtags.push('#shortkurtistyling', '#kurtijeanscombo');
+  } else if (p1Lower.includes('shirt') || p1Lower.includes('vest') || p1Lower.includes('korean')) {
+    dynamicBackupHashtags.push('#collegeoutfitideas', '#koreanoutfitsindia');
+  } else if (p1Lower.includes('saree') || p1Lower.includes('festive') || p1Lower.includes('lehenga')) {
+    dynamicBackupHashtags.push('#festiveoutfitsindia', '#ethnicwearindia');
+  }
+  dynamicBackupHashtags.push('#meeshofinds', '#indianoutfitideas', '#meeshohaul', '#petitefashionindia', '#affordablestyling');
+
+  const uniqueRealHashtags = Array.from(new Set(dynamicBackupHashtags)).slice(0, 5);
   while (uniqueRealHashtags.length < 5) {
     const nextTag =
       VERIFIED_HIGH_VOLUME_INDIAN_HASHTAGS[
-        uniqueRealHashtags.length % VERIFIED_HIGH_VOLUME_INDIAN_HASHTAGS.length
+        (uniqueRealHashtags.length + offset) % VERIFIED_HIGH_VOLUME_INDIAN_HASHTAGS.length
       ];
     if (!uniqueRealHashtags.includes(nextTag)) {
       uniqueRealHashtags.push(nextTag);
@@ -1549,12 +1604,12 @@ export function enforceMastermindViralReelPack(
     p1.toLowerCase(),
     p2.toLowerCase(),
     p3.toLowerCase(),
-    'meesho short kurti with bootcut jeans combo',
-    'best meesho outfit combination under 399',
+    p4.toLowerCase(),
+    `${shortP1.toLowerCase()} styling ideas india`,
+    `meesho ${shortP1.toLowerCase()} under 399`,
     'height illusion outfit ideas for 5ft girls india',
     'college outfit ideas meesho haul 2026',
-    'how to style short kurti to look taller and slimmer',
-    'warm indian skin tone kurti color combinations',
+    'warm indian skin tone outfit color combinations',
     'meesho hidden gems wishlist links',
   ];
 
@@ -1562,18 +1617,19 @@ export function enforceMastermindViralReelPack(
     ? rawReelPack!.seoKeywords.map((k) => String(k).trim()).filter((k) => k && !BANNED_SEO_REGEX.test(k))
     : [];
 
-  const mergedSeo = Array.from(new Set([...defaultBuyerSeoKeywords.slice(0, 4), ...rawSeo, ...defaultBuyerSeoKeywords])).slice(0, 10);
+  // Put AI's fresh SEO keywords FIRST, then piece-specific keywords
+  const mergedSeo = Array.from(new Set([...rawSeo, ...defaultBuyerSeoKeywords])).slice(0, 10);
 
   const triggerWord = rawReelPack?.autoDmTriggerWord || 'LINK';
 
   const rawCaption = String(rawReelPack?.hinglishCaption || '').trim();
   const isCaptionTooShortOrSlop =
-    rawCaption.length < 140 || BANNED_SLOP_HOOK_REGEX.test(rawCaption);
+    rawCaption.length < 60 || BANNED_SLOP_HOOK_REGEX.test(rawCaption);
 
   const englishCaptionStylingSummary = `Pair ${p1} with ${p2} worn high at the natural waist, add ${p3} to cinch and define your silhouette, and finish with ${p4} for a complete head-to-toe look!`;
 
   const mastermindCaption = isCaptionTooShortOrSlop
-    ? `Be honest—which piece from this 4-piece combo are you adding to your Meesho wishlist first: 1, 2, 3, or all 4? 😭✨\n\nMost girls buy good clothes on Meesho but wear them in a basic way. Here is the exact 4-Piece Look-Transformation Formula so you look taller, snatched, and put-together:\n\n1️⃣ Piece 1 (Top): ${p1} (${priceTag})\n2️⃣ Piece 2 (Bottom): ${p2}\n3️⃣ Piece 3 (The Secret Proportion Trick): ${p3}\n4️⃣ Piece 4 (Completer): ${p4}\n\n💡 How to Style It Together: ${englishCaptionStylingSummary}\n\n👉 Comment "${triggerWord}" below and I will Auto-DM you all 4 review-checked Meesho product links in 5 seconds! (Make sure you are following me so my DM doesn't get hidden in your message requests 💕)\n\n📌 Save this Reel right now before your next shopping haul & send it to your bestie!`
+    ? `Wait before you scroll—which piece from this "${conceptTitle}" combo are you adding to your Meesho wishlist first: Piece 1, 2, 3, or all 4? 😭✨\n\nHere is the exact 4-Piece Look-Transformation Formula:\n1️⃣ Piece 1 (Hero Top): ${p1} (${priceTag})\n2️⃣ Piece 2 (Proportion Bottom): ${p2}\n3️⃣ Piece 3 (Secret Styling Layer): ${p3}\n4️⃣ Piece 4 (Completer): ${p4}\n\n💡 Styling Secret: ${englishCaptionStylingSummary}\n\n👉 Comment "${triggerWord}" below and I will Auto-DM you all 4 review-checked Meesho links in 5 seconds! 📌 Save this Reel before your next haul!`
     : rawCaption;
 
   return {

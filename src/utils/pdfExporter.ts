@@ -13,6 +13,16 @@ function cleanPdfText(input: string | undefined | null): string {
   if (!input) return "";
   return String(input)
     .replace(/glowcash(\s+ai\s+studio)?/gi, "Private Studio")
+    .replace(/1️⃣/g, "[1]")
+    .replace(/2️⃣/g, "[2]")
+    .replace(/3️⃣/g, "[3]")
+    .replace(/4️⃣/g, "[4]")
+    .replace(/⚠️/g, "[!]")
+    .replace(/👁️/g, "")
+    .replace(/🎯/g, "")
+    .replace(/⚙️/g, "")
+    .replace(/🧠/g, "")
+    .replace(/🔥/g, "")
     .replace(/₹\s*/g, "Rs. ")
     .replace(/[“”]/g, '"')
     .replace(/[‘’]/g, "'")
@@ -23,6 +33,7 @@ function cleanPdfText(input: string | undefined | null): string {
     .replace(/✓|✔/g, "[x]")
     .replace(/→/g, "->")
     .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "")
+    .replace(/\s{2,}/g, " ")
     .trim();
 }
 
@@ -44,14 +55,24 @@ export function downloadEbookAsPDF(result: EbookGenerationResult): void {
 
   const pageWidth = doc.internal.pageSize.getWidth(); // 595.28 pt
   const pageHeight = doc.internal.pageSize.getHeight(); // 841.89 pt
-  const margin = 42;
+  const margin = 40;
   const contentWidth = pageWidth - margin * 2;
-  let y = 44;
+  let y = 40;
+
+  const drawPageTopAccent = () => {
+    doc.setFillColor(24, 9, 44);
+    doc.rect(0, 0, pageWidth, 8, "F");
+    doc.setFillColor(236, 72, 153);
+    doc.rect(0, 8, pageWidth, 2.5, "F");
+  };
+
+  drawPageTopAccent();
 
   const ensureSpace = (neededHeight: number) => {
-    if (y + neededHeight > pageHeight - 52) {
+    if (y + neededHeight > pageHeight - 50) {
       doc.addPage();
-      y = 46;
+      drawPageTopAccent();
+      y = 42;
     }
   };
 
@@ -82,134 +103,159 @@ export function downloadEbookAsPDF(result: EbookGenerationResult): void {
     }
   };
 
-  // =========================================================================
-  // 100% WHITE-LABEL COVER HEADER BANNER (Zero "GlowCash" Mention)
-  // =========================================================================
-  doc.setFillColor(34, 13, 56); // Deep luxury plum
-  doc.roundedRect(margin, y, contentWidth, 118, 10, 10, "F");
+  const drawStyledBox = (
+    headerLabel: string,
+    bodyText: string,
+    bgRGB: [number, number, number],
+    borderRGB: [number, number, number],
+    accentRGB: [number, number, number],
+    headerRGB: [number, number, number],
+    bodyRGB: [number, number, number] = [28, 15, 38],
+    useMonospace = false
+  ) => {
+    const cleanHeader = cleanPdfText(headerLabel);
+    const cleanBody = cleanPdfText(bodyText);
+    if (!cleanBody) return;
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9.5);
-  doc.setTextColor(244, 114, 182); // Pink accent
-  doc.text(
-    cleanPdfText(
-      `PRIVATE INSIDER EDITION  |  SPECIAL ACCESS: ${result.priceDisplay} (VALUE ${result.anchorPriceDisplay})`
-    ).toUpperCase(),
-    margin + 18,
-    y + 24
-  );
+    doc.setFont(useMonospace ? "courier" : "helvetica", "normal");
+    doc.setFontSize(useMonospace ? 10.2 : 11.2);
+    const bodyLines: string[] = doc.splitTextToSize(
+      cleanBody,
+      contentWidth - 30
+    );
+    const lineH = useMonospace ? 14.2 : 15.5;
+    const boxH = 30 + bodyLines.length * lineH;
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16.5);
-  doc.setTextColor(255, 255, 255);
+    ensureSpace(boxH + 10);
+
+    doc.setFillColor(bgRGB[0], bgRGB[1], bgRGB[2]);
+    doc.setDrawColor(borderRGB[0], borderRGB[1], borderRGB[2]);
+    doc.roundedRect(margin, y, contentWidth, boxH, 7, 7, "FD");
+
+    // Left vertical accent stripe
+    doc.setFillColor(accentRGB[0], accentRGB[1], accentRGB[2]);
+    doc.roundedRect(margin, y, 5, boxH, 3, 3, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.8);
+    doc.setTextColor(headerRGB[0], headerRGB[1], headerRGB[2]);
+    doc.text(cleanHeader.toUpperCase(), margin + 14, y + 16);
+
+    doc.setFont(useMonospace ? "courier" : "helvetica", "normal");
+    doc.setFontSize(useMonospace ? 10.2 : 11.2);
+    doc.setTextColor(bodyRGB[0], bodyRGB[1], bodyRGB[2]);
+    let by = y + 32;
+    for (const bLine of bodyLines) {
+      doc.text(bLine, margin + 14, by);
+      by += lineH;
+    }
+
+    y += boxH + 10;
+  };
+
+  // =========================================================================
+  // 100% WHITE-LABEL CLASSIFIED 1% INSIDER DOSSIER COVER BANNER
+  // =========================================================================
   const titleLines: string[] = doc.splitTextToSize(
     cleanPdfText(result.ebook.title),
     contentWidth - 36
   );
-  let bannerY = y + 48;
-  for (const tLine of titleLines.slice(0, 2)) {
-    doc.text(tLine, margin + 18, bannerY);
-    bannerY += 20;
-  }
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.5);
-  doc.setTextColor(249, 208, 234);
   const subLines: string[] = doc.splitTextToSize(
     cleanPdfText(result.ebook.subtitle),
     contentWidth - 36
   );
+  const coverHeight =
+    66 +
+    Math.min(titleLines.length, 3) * 19 +
+    Math.min(subLines.length, 2) * 14;
+
+  doc.setFillColor(22, 9, 38); // Deep underground obsidian-plum
+  doc.setDrawColor(236, 72, 153);
+  doc.roundedRect(margin, y, contentWidth, coverHeight, 10, 10, "FD");
+
+  // Top classified badge inside banner
+  doc.setFillColor(131, 24, 67);
+  doc.roundedRect(margin + 16, y + 14, contentWidth - 32, 20, 4, 4, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.8);
+  doc.setTextColor(253, 224, 71); // Warm gold
+  doc.text(
+    cleanPdfText(
+      `CLASSIFIED 1% INSIDER DOSSIER  |  GREY-HAT ORACLE EDITION  |  SPECIAL ACCESS: ${result.priceDisplay} (VALUE ${result.anchorPriceDisplay})`
+    ).toUpperCase(),
+    margin + 24,
+    y + 27
+  );
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15.5);
+  doc.setTextColor(255, 255, 255);
+  let bannerY = y + 54;
+  for (const tLine of titleLines.slice(0, 3)) {
+    doc.text(tLine, margin + 18, bannerY);
+    bannerY += 19;
+  }
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.2);
+  doc.setTextColor(249, 208, 234);
   for (const sLine of subLines.slice(0, 2)) {
-    doc.text(sLine, margin + 18, bannerY);
+    doc.text(sLine, margin + 18, bannerY + 2);
     bannerY += 14;
   }
 
-  y += 136;
+  y += coverHeight + 14;
 
   // Target Reader Promise
   if (result.ebook.targetReaderPromise) {
-    writeWrappedText(
-      `Core Promise: ${result.ebook.targetReaderPromise}`,
-      11.5,
-      "italic",
-      [88, 28, 135],
-      0,
-      1.45
+    drawStyledBox(
+      "CLASSIFIED BRIEFING PROMISE (100% VERIFIED & HONEST)",
+      result.ebook.targetReaderPromise,
+      [250, 245, 255],
+      [216, 180, 254],
+      [126, 34, 206],
+      [107, 33, 168],
+      [35, 15, 50]
     );
-    y += 8;
   }
 
   // =========================================================================
   // GOLDEN RULE CALLOUT BOX
   // =========================================================================
-  const goldenRuleText = cleanPdfText(result.ebook.goldenRuleBody);
-  const goldenLines: string[] = doc.splitTextToSize(
-    goldenRuleText,
-    contentWidth - 28
-  );
-  const goldenBoxHeight = 34 + goldenLines.length * 16;
-  ensureSpace(goldenBoxHeight + 12);
-
-  doc.setFillColor(253, 242, 248);
-  doc.setDrawColor(236, 72, 153);
-  doc.roundedRect(margin, y, contentWidth, goldenBoxHeight, 8, 8, "FD");
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(157, 23, 77);
-  doc.text(
-    cleanPdfText(result.ebook.goldenRuleTitle || "The 1% Golden Rule"),
-    margin + 14,
-    y + 18
-  );
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11.5);
-  doc.setTextColor(35, 15, 45);
-  let gy = y + 36;
-  for (const gLine of goldenLines) {
-    doc.text(gLine, margin + 14, gy);
-    gy += 16;
+  if (result.ebook.goldenRuleBody) {
+    drawStyledBox(
+      result.ebook.goldenRuleTitle || "THE #1 INSIDER SAFETY & EXECUTION RULE",
+      result.ebook.goldenRuleBody,
+      [255, 251, 235],
+      [252, 211, 77],
+      [217, 119, 6],
+      [146, 64, 14],
+      [45, 25, 10]
+    );
   }
-  y += goldenBoxHeight + 16;
 
   // =========================================================================
   // THE HARDEST PART SOLVED (MASTERMIND MAP: WHERE TO FIND CLIENTS / LINKS)
   // =========================================================================
   if (result.ebook.hardestPartSolvedBox) {
-    ensureSpace(80);
-    writeWrappedText(
+    const mapItems = (
+      result.ebook.hardestPartSolvedBox.exactWhereToFindMap || []
+    )
+      .map((item, idx) => `${idx + 1}. ${item}`)
+      .join("\n");
+    const trickNote = result.ebook.hardestPartSolvedBox.zeroFollowerTrafficTrick
+      ? `\nZero-Follower Leverage Rule: ${result.ebook.hardestPartSolvedBox.zeroFollowerTrafficTrick}`
+      : "";
+    drawStyledBox(
       result.ebook.hardestPartSolvedBox.title ||
-        "THE HARDEST PART SOLVED: EXACT MASTERMIND SOURCE & CLIENT MAP",
-      12.5,
-      "bold",
-      [157, 23, 77]
+        "THE HARDEST PART SOLVED: EXACT PORTALS, FILTERS & CLICK-PATHS",
+      `${mapItems}${trickNote}`,
+      [253, 242, 248],
+      [244, 114, 182],
+      [219, 39, 119],
+      [157, 23, 77],
+      [35, 12, 42]
     );
-    y += 4;
-    (result.ebook.hardestPartSolvedBox.exactWhereToFindMap || []).forEach(
-      (step, idx) => {
-        writeWrappedText(
-          `${idx + 1}. ${step}`,
-          11.5,
-          "normal",
-          [28, 14, 38],
-          8,
-          1.45
-        );
-        y += 3;
-      }
-    );
-    if (result.ebook.hardestPartSolvedBox.zeroFollowerTrafficTrick) {
-      writeWrappedText(
-        `Zero-Follower Mastermind Trick: ${result.ebook.hardestPartSolvedBox.zeroFollowerTrafficTrick}`,
-        11.5,
-        "bold",
-        [88, 28, 135],
-        8,
-        1.45
-      );
-    }
-    y += 12;
   }
 
   // =========================================================================
@@ -219,184 +265,183 @@ export function downloadEbookAsPDF(result: EbookGenerationResult): void {
     Array.isArray(result.ebook.quickValueBreakdown) &&
     result.ebook.quickValueBreakdown.length > 0
   ) {
-    ensureSpace(40);
-    writeWrappedText(
-      "QUICK-START 4-PILLAR EXECUTION OVERVIEW",
-      12.5,
-      "bold",
-      [131, 24, 67]
+    const pillarsText = result.ebook.quickValueBreakdown
+      .map((p, i) => `[${i + 1}] ${p.metric}: ${p.detail}`)
+      .join("\n");
+    drawStyledBox(
+      "QUICK-START 4-PILLAR INSIDER OVERVIEW",
+      pillarsText,
+      [245, 243, 255],
+      [196, 181, 253],
+      [109, 40, 217],
+      [91, 33, 182],
+      [30, 18, 48]
     );
-    y += 4;
-
-    result.ebook.quickValueBreakdown.forEach((pillar, idx) => {
-      writeWrappedText(
-        `${idx + 1}. ${pillar.metric}: ${pillar.detail}`,
-        11.5,
-        "normal",
-        [30, 20, 40],
-        8,
-        1.45
-      );
-      y += 4;
-    });
-    y += 10;
   }
 
   // =========================================================================
-  // 5 SIMPLE-ENGLISH CHAPTERS (12PT READABLE FONT)
+  // 5 GREY-HAT ORACLE CHAPTERS (CLASSIFIED 1% DOSSIER LAYOUT)
   // =========================================================================
   result.ebook.chapters.forEach((ch, idx) => {
-    ensureSpace(80);
+    ensureSpace(110);
 
-    // Chapter Divider Header
-    doc.setFillColor(245, 240, 255);
-    doc.setDrawColor(192, 132, 252);
-    doc.roundedRect(margin, y, contentWidth, 30, 6, 6, "FD");
-
+    // Chapter Header Banner (Deep Luxury Plum with Gold/Pink Badge)
+    const chTitleClean = cleanPdfText(
+      `CHAPTER 0${ch.chapterNumber || idx + 1}  ·  ${ch.title}`
+    );
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(12.5);
-    doc.setTextColor(88, 28, 135);
-    doc.text(
-      cleanPdfText(
-        `CHAPTER 0${ch.chapterNumber || idx + 1}: ${ch.title}`
-      ).toUpperCase(),
-      margin + 12,
-      y + 19
+    doc.setFontSize(12.2);
+    const chHeaderLines: string[] = doc.splitTextToSize(
+      chTitleClean,
+      contentWidth - 28
     );
-    y += 42;
+    const chBannerH = 18 + chHeaderLines.length * 16;
 
-    if (ch.subtitle) {
-      writeWrappedText(
-        `Focus: ${ch.subtitle}`,
-        11.5,
-        "bold",
-        [157, 23, 77],
-        0,
-        1.4
+    doc.setFillColor(30, 12, 52);
+    doc.roundedRect(margin, y, contentWidth, chBannerH, 7, 7, "F");
+    doc.setFillColor(236, 72, 153);
+    doc.roundedRect(margin, y, 6, chBannerH, 3, 3, "F");
+
+    doc.setTextColor(255, 255, 255);
+    let chy = y + 19;
+    for (const hl of chHeaderLines) {
+      doc.text(hl, margin + 14, chy);
+      chy += 16;
+    }
+    y += chBannerH + 6;
+
+    // Confidential Warning Strip
+    const rawSub = cleanPdfText(ch.subtitle || "");
+    const cleanSubHook = rawSub
+      .replace(/^\[!\]\s*WARNING:\s*Keep this strictly confidential\.?\s*/i, "")
+      .trim();
+    const warningBody = cleanSubHook
+      ? `[!] WARNING: Keep this strictly confidential. ${cleanSubHook}`
+      : `[!] WARNING: Keep this strictly confidential. Do not share this loophole publicly.`;
+
+    drawStyledBox(
+      "CONFIDENTIALITY NOTICE & CHAPTER FOCUS",
+      warningBody,
+      [255, 251, 235],
+      [251, 191, 36],
+      [217, 119, 6],
+      [146, 64, 14],
+      [60, 30, 5]
+    );
+
+    // 1. 👁️ The 99% Illusion vs. The 1% Reality
+    if (ch.coreSecretSummary) {
+      drawStyledBox(
+        "THE 99% ILLUSION VS. THE 1% REALITY",
+        ch.coreSecretSummary,
+        [248, 245, 255],
+        [192, 132, 252],
+        [126, 34, 206],
+        [88, 28, 135],
+        [24, 14, 38]
       );
-      y += 4;
     }
 
-    // Core 1% Secret Summary (12pt body)
-    writeWrappedText(
-      ch.coreSecretSummary,
-      12,
-      "normal",
-      [24, 15, 34],
-      0,
-      1.48
-    );
-    y += 8;
-
-    // Mastermind "Where to Find It / Hidden Shortcut" Box
+    // 2. 🎯 The "Grey-Hat" Mechanism (The Secret)
     if (ch.whereToFindOrHiddenTrick) {
-      writeWrappedText(
-        `Mastermind Shortcut (Where & How to Find It): ${ch.whereToFindOrHiddenTrick}`,
-        11.5,
-        "bold",
-        [131, 24, 67],
-        6,
-        1.44
+      drawStyledBox(
+        'THE "GREY-HAT" MECHANISM (THE SECRET & EXACT CLICK-PATH)',
+        ch.whereToFindOrHiddenTrick,
+        [253, 242, 248],
+        [244, 114, 182],
+        [219, 39, 119],
+        [157, 23, 77],
+        [35, 12, 42]
       );
-      y += 6;
     }
 
-    // Step-by-Step Execution
+    // 3. ⚙️ Step-by-Step Execution (The Exploit)
     if (
       Array.isArray(ch.stepByStepExecution) &&
       ch.stepByStepExecution.length > 0
     ) {
+      ensureSpace(45);
       writeWrappedText(
-        "Step-by-Step Action Plan:",
-        11.5,
+        "STEP-BY-STEP EXECUTION (THE EXPLOIT):",
+        11,
         "bold",
-        [88, 28, 135]
+        [131, 24, 67]
       );
-      y += 2;
+      y += 3;
       ch.stepByStepExecution.forEach((step, sIdx) => {
+        const cleanedStep = cleanPdfText(step);
+        const formattedStep = /^(\[\d+\]|\d+\.)/.test(cleanedStep)
+          ? cleanedStep
+          : `[${sIdx + 1}] ${cleanedStep}`;
         writeWrappedText(
-          `${sIdx + 1}. ${step}`,
-          12,
+          formattedStep,
+          11.4,
           "normal",
-          [30, 20, 40],
-          10,
-          1.45
+          [28, 18, 38],
+          8,
+          1.44
         );
-        y += 3;
+        y += 4;
       });
-      y += 6;
+      y += 4;
     }
 
-    // Exact Websites / Tools
+    // 4. 🌐 Exact Underground Portals & Free Tools
     if (
       Array.isArray(ch.exactToolsOrWebsites) &&
       ch.exactToolsOrWebsites.length > 0
     ) {
-      writeWrappedText(
-        "Exact Websites, Portals & Free Tools to Use:",
-        11.5,
-        "bold",
-        [131, 24, 67]
+      const toolsText = ch.exactToolsOrWebsites
+        .map((t) => `- ${t.name} (${t.role}): ${t.insiderTip}`)
+        .join("\n");
+      drawStyledBox(
+        "EXACT UNDERGROUND PORTALS & FREE TOOLS TO USE",
+        toolsText,
+        [243, 244, 246],
+        [209, 213, 219],
+        [75, 85, 99],
+        [31, 41, 55],
+        [25, 30, 40]
       );
-      y += 2;
-      ch.exactToolsOrWebsites.forEach((tool) => {
-        writeWrappedText(
-          `- ${tool.name} (${tool.role}): ${tool.insiderTip}`,
-          11.5,
-          "normal",
-          [45, 25, 60],
-          10,
-          1.42
-        );
-        y += 2;
-      });
-      y += 6;
     }
 
-    // Copy-Paste Script / Prompt Box
+    // 5. 🧠 The Jedi Mind-Trick / Secret Script
     if (ch.copyPasteTemplateOrScript?.content) {
-      const scriptLabel = cleanPdfText(
-        ch.copyPasteTemplateOrScript.label || "Copy-Paste Template / Script"
+      const rawLabel = cleanPdfText(
+        ch.copyPasteTemplateOrScript.label ||
+          "THE JEDI MIND-TRICK / SECRET COPY-PASTE SCRIPT"
       );
-      const scriptLines: string[] = doc.splitTextToSize(
-        cleanPdfText(ch.copyPasteTemplateOrScript.content),
-        contentWidth - 24
+      const headerLabel = rawLabel
+        .toLowerCase()
+        .includes("jedi mind-trick")
+        ? rawLabel
+        : `THE JEDI MIND-TRICK / SECRET SCRIPT (${rawLabel})`;
+      drawStyledBox(
+        headerLabel,
+        ch.copyPasteTemplateOrScript.content,
+        [250, 245, 255],
+        [192, 132, 252],
+        [147, 51, 234],
+        [107, 33, 168],
+        [25, 12, 42],
+        true
       );
-      const boxH = 30 + scriptLines.length * 14.5;
-      ensureSpace(boxH + 10);
-
-      doc.setFillColor(250, 245, 255);
-      doc.setDrawColor(216, 180, 254);
-      doc.roundedRect(margin, y, contentWidth, boxH, 6, 6, "FD");
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10.5);
-      doc.setTextColor(107, 33, 168);
-      doc.text(scriptLabel, margin + 12, y + 16);
-
-      doc.setFont("courier", "normal");
-      doc.setFontSize(10.5);
-      doc.setTextColor(30, 15, 45);
-      let sy = y + 32;
-      for (const sLine of scriptLines) {
-        doc.text(sLine, margin + 12, sy);
-        sy += 14.5;
-      }
-      y += boxH + 10;
     }
 
-    // Outcome / Proof
+    // 6. 🔥 The Unfair Advantage
     if (ch.incomeMathOrProof) {
-      writeWrappedText(
-        `Real-World Proof / Outcome: ${ch.incomeMathOrProof}`,
-        11.5,
-        "bold",
+      drawStyledBox(
+        "THE UNFAIR ADVANTAGE (REAL-WORLD PROOF & INCOME MATH)",
+        ch.incomeMathOrProof,
+        [236, 253, 245],
+        [110, 231, 183],
+        [5, 150, 105],
         [6, 95, 70],
-        0,
-        1.4
+        [6, 78, 59]
       );
-      y += 14;
     }
+
+    y += 8;
   });
 
   // =========================================================================
@@ -406,45 +451,37 @@ export function downloadEbookAsPDF(result: EbookGenerationResult): void {
     Array.isArray(result.ebook.twentyFourHourChecklist) &&
     result.ebook.twentyFourHourChecklist.length > 0
   ) {
-    ensureSpace(80);
-    writeWrappedText(
+    const checklistText = result.ebook.twentyFourHourChecklist
+      .map((item) => `[ ]  ${item}`)
+      .join("\n");
+    drawStyledBox(
       "24-HOUR FAST-ACTION IMPLEMENTATION CHECKLIST",
-      13,
-      "bold",
-      [131, 24, 67]
+      checklistText,
+      [253, 242, 248],
+      [244, 114, 182],
+      [219, 39, 119],
+      [131, 24, 67],
+      [28, 14, 38]
     );
-    y += 4;
-    result.ebook.twentyFourHourChecklist.forEach((item) => {
-      writeWrappedText(
-        `[ ]  ${item}`,
-        12,
-        "normal",
-        [25, 15, 35],
-        8,
-        1.45
-      );
-      y += 4;
-    });
-    y += 14;
   }
 
   // Add 100% White-Label Footer Page Numbers on every page (NO GlowCash branding!)
   const totalPages = doc.getNumberOfPages();
   for (let p = 1; p <= totalPages; p++) {
     doc.setPage(p);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(120, 100, 140);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(120, 95, 145);
     doc.text(
       cleanPdfText(
-        `${result.ebook.title.slice(0, 58)}  |  Page ${p} of ${totalPages}`
+        `CLASSIFIED 1% INSIDER DOSSIER  |  ${result.ebook.title.slice(0, 52)}  |  Page ${p} of ${totalPages}`
       ),
       margin,
-      pageHeight - 22
+      pageHeight - 20
     );
   }
 
-  doc.save(makeSafeFilename(result.ebook.title, "12pt-playbook", "pdf"));
+  doc.save(makeSafeFilename(result.ebook.title, "classified-1pct-dossier", "pdf"));
 }
 
 export function downloadReelPackAsPDF(result: ReelGenerationResult): void {
@@ -729,10 +766,10 @@ export function downloadReelPackAsPDF(result: ReelGenerationResult): void {
 }
 
 export function buildPrintableEbookHtml(result: EbookGenerationResult): string {
-  const safeEditionTag = (result.ebook.editionTag || "2026 PRIVATE INSIDER EDITION · ZERO FLUFF").replace(
-    /glowcash(\s+ai\s+studio)?/gi,
-    "PRIVATE INSIDER"
-  );
+  const safeEditionTag = (
+    result.ebook.editionTag ||
+    "CLASSIFIED 1% INSIDER DOSSIER · GREY-HAT ORACLE EDITION"
+  ).replace(/glowcash(\s+ai\s+studio)?/gi, "CLASSIFIED 1% INSIDER");
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -740,64 +777,85 @@ export function buildPrintableEbookHtml(result: EbookGenerationResult): string {
 <meta charset="UTF-8" />
 <title>${result.ebook.title}</title>
 <style>
-  @page { size: A4; margin: 18mm; }
-  body { font-family: 'Georgia', 'Times New Roman', serif; font-size: 12pt; line-height: 1.75; color: #180920; background: #FFFDF9; max-width: 780px; margin: 28px auto; padding: 32px; }
-  .top-bar { display: flex; justify-content: space-between; align-items: center; background: #220D38; color: #fff; padding: 14px 20px; border-radius: 12px; margin-bottom: 24px; font-family: sans-serif; }
-  .print-btn { background: #EC4899; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11pt; }
-  h1 { font-size: 24pt; color: #3B0764; margin-bottom: 8px; line-height: 1.25; }
-  h2 { font-size: 15.5pt; color: #831843; margin-top: 28px; border-bottom: 2px solid #FBCFE8; padding-bottom: 6px; }
-  .badge { display: inline-block; background: #FCE7F3; color: #9D174D; padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 10pt; font-family: sans-serif; }
-  .box { background: #FDF2F8; border: 1px solid #F9A8D4; padding: 16px; border-radius: 10px; margin: 16px 0; page-break-inside: avoid; }
-  .trick-box { background: #F3E8FF; border: 1px solid #C084FC; padding: 14px; border-radius: 10px; margin: 12px 0; page-break-inside: avoid; }
-  .chapter-card { border: 1px solid #F3E8FF; background: #FFFFFF; padding: 20px; border-radius: 12px; margin-bottom: 22px; page-break-inside: avoid; }
+  @page { size: A4; margin: 16mm; }
+  body { font-family: 'Georgia', 'Times New Roman', serif; font-size: 12pt; line-height: 1.72; color: #180920; background: #FAF7FF; max-width: 800px; margin: 24px auto; padding: 32px; }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; background: #160926; color: #fff; padding: 14px 20px; border-radius: 12px; margin-bottom: 24px; font-family: sans-serif; border: 1px solid #EC4899; }
+  .print-btn { background: linear-gradient(90deg, #EC4899, #9333EA); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11pt; }
+  .cover-box { background: linear-gradient(135deg, #160828 0%, #2A0E46 100%); color: #FFFFFF; padding: 28px; border-radius: 16px; border-left: 6px solid #EC4899; margin-bottom: 24px; }
+  .badge { display: inline-block; background: #831843; color: #FDE047; padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 9.5pt; font-family: sans-serif; letter-spacing: 0.5px; text-transform: uppercase; }
+  .cover-box h1 { font-size: 22pt; color: #FFFFFF; margin: 14px 0 8px 0; line-height: 1.25; }
+  .cover-box p { color: #FBCFE8; margin: 0; font-size: 11.5pt; }
+  h2 { font-size: 15pt; color: #3B0764; margin-top: 24px; border-bottom: 2px solid #E9D5FF; padding-bottom: 6px; font-family: sans-serif; }
+  .warning-strip { background: #FFFBEB; border: 1px solid #F59E0B; border-left: 5px solid #D97706; color: #78350F; padding: 12px 16px; border-radius: 10px; margin: 12px 0; font-family: sans-serif; font-size: 10.5pt; }
+  .illusion-box { background: #FAF5FF; border: 1px solid #D8B4FE; border-left: 5px solid #9333EA; padding: 15px 18px; border-radius: 10px; margin: 14px 0; page-break-inside: avoid; }
+  .secret-box { background: #FDF2F8; border: 1px solid #F472B6; border-left: 5px solid #DB2777; padding: 15px 18px; border-radius: 10px; margin: 14px 0; page-break-inside: avoid; }
+  .script-box { background: #1E1030; color: #FCE7F3; border: 1px solid #A855F7; padding: 16px 18px; border-radius: 10px; margin: 14px 0; page-break-inside: avoid; }
+  .advantage-box { background: #ECFDF5; border: 1px solid #6EE7B7; border-left: 5px solid #059669; color: #064E3B; padding: 14px 18px; border-radius: 10px; margin: 14px 0; font-weight: bold; page-break-inside: avoid; }
+  .chapter-card { border: 1px solid #E9D5FF; background: #FFFFFF; padding: 24px; border-radius: 16px; margin-bottom: 28px; box-shadow: 0 4px 16px rgba(59, 7, 100, 0.06); page-break-inside: avoid; }
+  .chapter-header { background: #1E0B36; color: #FFFFFF; padding: 12px 18px; border-radius: 10px; font-family: sans-serif; font-size: 13.5pt; font-weight: bold; border-left: 5px solid #EC4899; margin-bottom: 12px; }
+  .section-label { font-family: sans-serif; font-size: 9.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; display: block; margin-bottom: 6px; }
   ul, ol { padding-left: 22px; }
   li { margin-bottom: 8px; }
-  @media print { .no-print { display: none !important; } body { margin: 0; padding: 0; background: #FFFFFF; } }
+  @media print { .no-print { display: none !important; } body { margin: 0; padding: 0; background: #FFFFFF; } .script-box { background: #F5F3FF !important; color: #1E1030 !important; } }
 </style>
 </head>
 <body>
   <div class="top-bar no-print">
-    <div><strong>12pt Printable Executive Playbook</strong></div>
-    <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+    <div><strong>Classified 1% Insider Dossier · 12pt Printable Edition</strong></div>
+    <button class="print-btn" onclick="window.print()">Print / Save as Luxury PDF</button>
   </div>
-  <div class="badge">${safeEditionTag} · Offer Price: ${result.priceDisplay} (Value ${result.anchorPriceDisplay})</div>
-  <h1>${result.ebook.title}</h1>
-  <p><strong>${result.ebook.subtitle}</strong></p>
+  <div class="cover-box">
+    <div class="badge">${safeEditionTag} · Offer: ${result.priceDisplay} (Value ${result.anchorPriceDisplay})</div>
+    <h1>${result.ebook.title}</h1>
+    <p>${result.ebook.subtitle}</p>
+  </div>
   <p><em>${result.ebook.targetReaderPromise}</em></p>
-  <div class="box"><strong>${result.ebook.goldenRuleTitle}:</strong><br/>${result.ebook.goldenRuleBody}</div>
+  <div class="warning-strip"><strong>${result.ebook.goldenRuleTitle}:</strong><br/>${result.ebook.goldenRuleBody}</div>
   ${
     result.ebook.hardestPartSolvedBox
-      ? `<div class="trick-box"><strong>${result.ebook.hardestPartSolvedBox.title}:</strong><ul>${(
+      ? `<div class="secret-box"><span class="section-label" style="color:#9D174D;">${result.ebook.hardestPartSolvedBox.title}</span><ul>${(
           result.ebook.hardestPartSolvedBox.exactWhereToFindMap || []
         )
           .map((m) => `<li>${m}</li>`)
-          .join("")}</ul><p><strong>Zero-Follower Mastermind Trick:</strong> ${
+          .join("")}</ul><p><strong>Zero-Follower Leverage Trick:</strong> ${
           result.ebook.hardestPartSolvedBox.zeroFollowerTrafficTrick
         }</p></div>`
       : ""
   }
-  <h2>Quick-Start 4-Pillar Overview</h2>
+  <h2>Quick-Start 4-Pillar Insider Overview</h2>
   <ul>${result.ebook.quickValueBreakdown
     .map((i) => `<li><strong>${i.metric}:</strong> ${i.detail}</li>`)
     .join("")}</ul>
   ${result.ebook.chapters
-    .map(
-      (c) => `
+    .map((c) => {
+      const cleanSub = (c.subtitle || "")
+        .replace(/^⚠️\s*WARNING:\s*Keep this strictly confidential\.?\s*/i, "")
+        .trim();
+      return `
     <div class="chapter-card">
-      <h2>Chapter 0${c.chapterNumber}: ${c.title}</h2>
-      <p><em><strong>${c.subtitle}</strong></em></p>
-      <p>${c.coreSecretSummary}</p>
+      <div class="chapter-header">Chapter 0${c.chapterNumber} · ${c.title}</div>
+      <div class="warning-strip">
+        <strong>⚠️ WARNING: Keep this strictly confidential.</strong>
+        ${cleanSub ? `<br/><span>💡 ${cleanSub}</span>` : ""}
+      </div>
+      <div class="illusion-box">
+        <span class="section-label" style="color:#6B21A8;">👁️ The 99% Illusion vs. The 1% Reality:</span>
+        <div>${c.coreSecretSummary}</div>
+      </div>
       ${
         c.whereToFindOrHiddenTrick
-          ? `<div class="trick-box"><strong>🎯 Mastermind Shortcut (Where & How to Find It):</strong><br/>${c.whereToFindOrHiddenTrick}</div>`
+          ? `<div class="secret-box">
+              <span class="section-label" style="color:#9D174D;">🎯 The &ldquo;Grey-Hat&rdquo; Mechanism (The Secret):</span>
+              <div>${c.whereToFindOrHiddenTrick}</div>
+            </div>`
           : ""
       }
-      <p><strong>Step-by-Step Action Plan:</strong></p>
+      <p><strong style="font-family:sans-serif;text-transform:uppercase;font-size:10.5pt;color:#831843;">⚙️ Step-by-Step Execution (The Exploit):</strong></p>
       <ol>${c.stepByStepExecution.map((s) => `<li>${s}</li>`).join("")}</ol>
       ${
         Array.isArray(c.exactToolsOrWebsites) &&
         c.exactToolsOrWebsites.length > 0
-          ? `<p><strong>Exact Websites & Tools:</strong></p><ul>${c.exactToolsOrWebsites
+          ? `<p><strong style="font-family:sans-serif;text-transform:uppercase;font-size:10.5pt;color:#4B5563;">🌐 Exact Underground Portals & Free Tools:</strong></p><ul>${c.exactToolsOrWebsites
               .map(
                 (t) =>
                   `<li><strong>${t.name}</strong> (${t.role}): ${t.insiderTip}</li>`
@@ -805,11 +863,20 @@ export function buildPrintableEbookHtml(result: EbookGenerationResult): string {
               .join("")}</ul>`
           : ""
       }
-      <div class="box"><strong>${c.copyPasteTemplateOrScript.label}:</strong><br/><pre style="white-space:pre-wrap;font-family:monospace;font-size:10.5pt;">${c.copyPasteTemplateOrScript.content}</pre></div>
-      <p><strong>Real-World Proof / Outcome:</strong> ${c.incomeMathOrProof}</p>
+      <div class="script-box">
+        <span class="section-label" style="color:#F472B6;">${
+          c.copyPasteTemplateOrScript.label.startsWith("🧠")
+            ? c.copyPasteTemplateOrScript.label
+            : `🧠 The Jedi Mind-Trick / Secret Script (${c.copyPasteTemplateOrScript.label})`
+        }:</span>
+        <pre style="white-space:pre-wrap;font-family:monospace;font-size:10.5pt;margin:0;">${c.copyPasteTemplateOrScript.content}</pre>
+      </div>
+      <div class="advantage-box">
+        🔥 The Unfair Advantage: ${c.incomeMathOrProof}
+      </div>
     </div>
-  `
-    )
+  `;
+    })
     .join("")}
   <h2>24-Hour Fast-Action Checklist</h2>
   <ul>${result.ebook.twentyFourHourChecklist
