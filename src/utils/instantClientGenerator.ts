@@ -1,6 +1,7 @@
 import {
   ReelGenerationResult,
   EbookGenerationResult,
+  EbookReelSectionKey,
   SearchTermItem,
   CURATED_REEL_IDEA_BANK,
   UNIQUE_STYLING_COMBINATION_MATRIX,
@@ -8,6 +9,8 @@ import {
   sanitizeMeeshoSearchTerm,
   buildMasterPrompts,
   enforceMastermindViralReelPack,
+  buildAntiSlopEbookVideoPrompts,
+  buildRotatingEbookReelSectionFallback,
 } from "../data/playbookData";
 
 /**
@@ -167,331 +170,293 @@ export function generateInstantEbookClientSide(
       priceDisplay: priceDisplay || "₹29",
       anchorPriceDisplay: anchorPriceDisplay || "₹2,499",
       autoDmTrigger: autoDmTrigger || "CHAT10",
-      providerUsed: "2026–2027 Verified Non-Bidding Portal Engine",
+      providerUsed: "2026 Private Playbook Engine",
       ebook: {
         editionTag:
-          "2026–2027 FACT-CHECKED INSIDER EDITION · 10 NON-BIDDING PORTALS · ZERO UPWORK COMPETITION",
+          "2026 PRIVATE PLAYBOOK · 10 NON-BIDDING WEBSITES · ZERO UPWORK HASSLE",
         title: chatTitle,
         subtitle:
-          "How to Pass Direct Qualification Tests & Earn Weekly in USD/INR on 10 Real Non-Bidding Chat, AI Text Evaluation & Q&A Portals From India.",
+          "How to pass direct skill checks and get paid weekly in USD/INR on 10 real chat, AI rating & Q&A websites from India.",
         targetReaderPromise:
-          "Zero Upwork/Fiverr proposal bidding, zero registration fees, and zero fake data-entry scams. Every chapter covers 2 real, verified global portals (10 websites total) where Indians pass a 1-time skill or language check and get paid per task, chat hour, or evaluated response.",
+          "No Upwork bidding wars, no registration fees, and no fake typing scams. Every play gives you 2 real global websites (10 total) where you pass a quick check once and get paid per task or chat hour.",
         goldenRuleTitle:
-          "Your #1 Golden Rule: Never Pay 'Registration Fees' & Never Use AI Auto-Pasting During Qualification Tests",
+          "real talk: never pay any 'registration fee' & don't copy-paste ChatGPT on signup tests",
         goldenRuleBody:
-          "Every legitimate non-bidding chat and AI text evaluation portal in this manual is 100% free (₹0) to join. During qualification exams on Outlier, OneForma, CrowdGen, or ModSquad, never copy-paste answers from ChatGPT—their browser telemetry flags clipboard paste events immediately. Always type your evaluation justification in your own words and link a PAN-verified PayPal or Payoneer India account before starting tasks.",
+          "Every real website in this playbook is ₹0 free to join. When you take the starter test on Outlier, OneForma, CrowdGen, or ModSquad, don't paste answers from ChatGPT—their test page catches clipboard paste instantly. Just type short, clear answers in your own simple words and link a PAN-verified PayPal or Payoneer India account first.",
         hardestPartSolvedBox: {
           title:
-            "🔥 THE HARDEST PART SOLVED: Direct URLs & Exact Indian Signup Paths for All 10 Non-Bidding Websites",
+            "Every Direct Link & Indian Signup Path (All 10 Websites in One Place)",
           exactWhereToFindMap: [
-            "1. Outlier.ai (app.outlier.ai) & DataAnnotation.tech: Apply under 'Hindi / Indian English AI Writing & Chat Evaluator' (no coding required). Pays $7.50–$18/hr USD weekly every Tuesday via PayPal India.",
-            "2. OneForma (my.oneforma.com) & Appen CrowdGen (crowdgen.com): Go to 'Jobs → AI Data / Text Annotation & Chat Response Grading' → Pass the 15-minute language certification → Link Payoneer India.",
-            "3. TELUS Digital AI (telusinternational.ai) & Welocalize (jobs.welocalize.com): Search 'India Remote' → Apply for 'Personalized Internet Ads / Chat Search Quality Rater (Hindi/English)'.",
-            "4. RWS TrainAI (rws.com/trainai), ModSquad (modsquad.com/join-the-squad), Concentrix Remote Chat (jobs.concentrix.com) & Chegg India (cheggindia.com/qa-expert): Direct non-bidding text chat & written Q&A portals.",
+            "1. Outlier.ai (app.outlier.ai) & DataAnnotation.tech: Apply for 'Hindi / Indian English AI Writing & Chat Evaluator' (no coding needed). Pays $7.50–$18/hr USD weekly every Tuesday via PayPal India.",
+            "2. OneForma (my.oneforma.com) & Appen CrowdGen (crowdgen.com): Open 'Jobs → AI Data / Text Rating' → Pass the free 15-min language check → Link Payoneer India.",
+            "3. TELUS Digital AI (telusinternational.ai) & Welocalize (jobs.welocalize.com): Search 'India Remote' → Apply for 'Personalized Internet Ads / Search Quality Rater (Hindi/English)'.",
+            "4. RWS TrainAI (rws.com/trainai), ModSquad (modsquad.com/join-the-squad), Concentrix Remote Chat (jobs.concentrix.com) & Chegg India (cheggindia.com/qa-expert): Direct text chat & written Q&A work.",
           ],
           zeroFollowerTrafficTrick:
-            "Why Non-Bidding Portals Beat Freelance Marketplaces: Instead of competing with 200 bidders on Upwork, you pass a 20-minute objective rubric quiz once and unlock a self-serve task queue where you earn from your very first approved chat evaluation.",
+            "Why this beats freelance apps: instead of begging clients on Upwork against 200 bidders, you pass one short open-book quiz and pick tasks straight from the dashboard.",
         },
         quickValueBreakdown: [
           {
-            metric: "1. 10 Real Non-Bidding Portals",
+            metric: "1. 10 Real Non-Bidding Sites",
             detail:
-              "2 verified websites per chapter (= 10 total portals) with exact URLs and Indian payment methods.",
+              "2 verified sites per play (= 10 total) with exact URLs and Indian payout apps.",
           },
           {
-            metric: "2. Zero Proposal Bidding",
+            metric: "2. Zero Client Begging",
             detail:
-              "Pass a 1-time qualification assessment and claim tasks directly from the live queue.",
+              "Pass a 1-time skill check and claim tasks directly whenever you're free.",
           },
           {
-            metric: "3. Exact Rubric Pass Formula",
+            metric: "3. Copy-Paste Pass Formula",
             detail:
-              "Word-for-word 3-part justification template to pass Outlier, OneForma, and TELUS exams.",
+              "Simple 3-line answer format that passes Outlier, OneForma, and TELUS checks.",
           },
           {
-            metric: "4. Weekly PayPal & Payoneer Math",
+            metric: "4. Real Weekly Payouts",
             detail:
-              "Clear USD/INR payout schedules ($8–$15/hr on AI chat evaluation; ₹18,000–₹35,000/mo on remote chat).",
+              "Clear USD/INR payout math ($8–$15/hr on AI rating; ₹18,000–₹35,000/mo on remote chat).",
           },
         ],
         chapters: [
           {
             chapterNumber: 1,
             title:
-              "Websites #1 & #2: Outlier.ai & DataAnnotation.tech (The AI Evaluation Backdoor)",
+              "Sites #1 & #2: Outlier.ai & DataAnnotation.tech (Get Paid to Grade AI Chats)",
             subtitle:
-              "⚠️ WARNING: Keep this strictly confidential. How Indians earn $7.50–$18/hr USD grading AI chatbot answers with zero bidding.",
+              "real talk: how Indians earn $7.50–$18/hr USD checking chatbot replies with zero bidding.",
             coreSecretSummary:
-              "The 99% Illusion: Normal people waste 6 months on Upwork and Fiverr fighting 150 desperate bidders for a $5 typing gig and never get hired. The 1% Reality: Tech giants cannot launch new AI models without human evaluators in India grading which chatbot answer is smarter—and portals like Outlier.ai and DataAnnotation.tech pay $7.50 to $18/hour USD into your PayPal every Tuesday with zero client hunting.",
+              "Most people spend months on Upwork fighting 150 bidders for a $5 typing gig and never hear back. Meanwhile, AI companies literally pay regular people in India $7.50–$18/hour to read two chatbot replies side-by-side and explain which one is better—paid every Tuesday to PayPal.",
             whereToFindOrHiddenTrick:
-              "THE SECRET MECHANISM & EXACT CLICK-PATH: Instead of begging clients for work, you enter the AI supply chain directly. Open outlier.ai → Click 'View Opportunities' → Filter Location: 'India' → Select 'Hindi Language Writing / Generalist AI Trainer' or 'Indian English Evaluator'. Also open dataannotation.tech/starter-assessment using a clean Gmail account.",
+              "Open outlier.ai → Click 'View Opportunities' → Filter Location: 'India' → Pick 'Hindi Language Writing / Generalist AI Trainer' or 'Indian English Evaluator'. Also open dataannotation.tech/starter-assessment with a fresh Gmail.",
             stepByStepExecution: [
-              "1️⃣ The Infiltration: First, verify your Indian PayPal account with your PAN card and Indian bank account so automated Tuesday USD payouts never get stuck. Prepare a clean 1-page PDF resume highlighting writing, proofreading, tutoring, or bilingual Hindi-English communication.",
-              "2️⃣ The Trigger: Take the 30-minute starter assessment on Outlier.ai and DataAnnotation.tech in a quiet room. Never use Ctrl+C / Ctrl+V or browser AI extensions—their keystroke tracker flags clipboard pasting and rejects 90% of careless applicants automatically.",
-              "3️⃣ The Leverage: Grade every side-by-side AI chat response using the 3-Point Rubric (Truthfulness, Instruction Following, and Tone) and unlock optional skill badges inside Outlier's 'Enablement Center' tab to get 3x more daily task queues.",
-              "4️⃣ The Safety Lock: Keep your task timer within the recommended average time—never rush a 15-minute evaluation in 2 minutes, and verify every factual claim on Google Search before clicking Submit.",
+              "1. Setup: Verify your Indian PayPal account with your PAN card and Indian bank first so Tuesday payouts don't get stuck. Keep a clean 1-page resume highlighting writing, tutoring, or Hindi-English fluency.",
+              "2. The Move: Take the 30-min starter test on Outlier.ai and DataAnnotation.tech in a quiet room. Never use Ctrl+C / Ctrl+V—their test page detects pasted text and rejects careless signups automatically.",
+              "3. Scale It: Grade every side-by-side reply on 3 simple checks (is it true, did it follow rules, does it sound natural), and unlock extra free skill badges inside Outlier's 'Enablement Center' tab for more daily tasks.",
+              "4. Stay Safe: Don't rush a 15-minute task in 2 minutes, and quick-check facts on Google before hitting Submit so your account stays in good standing.",
             ],
             exactToolsOrWebsites: [
               {
                 name: "outlier.ai (app.outlier.ai)",
-                role: "Website #1 · Non-Bidding AI Chat Trainer & Hindi/English Evaluator ($7.50–$18/hr USD)",
+                role: "Site #1 · Non-Bidding AI Chat Trainer & Hindi/English Rater ($7.50–$18/hr USD)",
                 insiderTip:
-                  "Complete all optional skill screenings inside the 'Enablement Center' tab to unlock 3x more daily chat projects.",
+                  "Complete the free optional skill checks inside 'Enablement Center' to unlock more daily projects.",
               },
               {
                 name: "dataannotation.tech",
-                role: "Website #2 · Self-Serve AI Chatbot Comparison Portal (Weekly PayPal Payouts)",
+                role: "Site #2 · Self-Serve AI Chatbot Comparison Dashboard (Weekly PayPal)",
                 insiderTip:
-                  "Take your time on the starter assessment—accuracy on the 5 logic and fact-checking questions is 10x more important than speed.",
+                  "Take your time on the starter test—being accurate matters 10x more than finishing fast.",
               },
             ],
             copyPasteTemplateOrScript: {
               label:
-                "🧠 The Jedi Mind-Trick / Secret Script (3-Sentence Justification Formula That Scores 5/5)",
-              content: `"Response A is much better than Response B because it followed all formatting constraints, including the negative constraint to avoid bullet points. While both responses are factually accurate, Response B hallucinated an unrequested conclusion paragraph. Therefore, Response A is helpful, concise, and completely truthful."`,
+                "Copy-Paste 3-Line Rating Answer That Passes Quality Checks",
+              content: `"Response A is better than Response B because it followed every instruction, including the rule to avoid bullet points. While both answers are mostly right, Response B added extra made-up details at the end. Response A is clearer, accurate, and directly answers the prompt."`,
             },
             incomeMathOrProof:
-              "10 hours/week on Outlier.ai at $11/hr average = $110/week ($440/month ≈ ₹37,000/month) paid every Tuesday via PayPal while 99% of freelancers are still refreshing Upwork.",
+              "10 hours/week on Outlier.ai at $11/hr = $110/week × 4 weeks = $440/month (× ₹85 = ₹37,400/month) paid weekly to PayPal.",
           },
           {
             chapterNumber: 2,
             title:
-              "Websites #3 & #4: OneForma (Centific) & Appen CrowdGen (The Pre-Certified Fast Track)",
+              "Sites #3 & #4: OneForma & Appen CrowdGen (The Free Quiz Fast-Track)",
             subtitle:
-              "⚠️ WARNING: Keep this strictly confidential. High-approval non-bidding portals for Indian bilingual speakers with Payoneer USD payouts.",
+              "real talk: bilingual Hindi/English tasks that pay in USD via Payoneer.",
             coreSecretSummary:
-              "The 99% Illusion: Beginners apply to random remote jobs with an empty profile and wonder why their application sits on 'Pending' forever. The 1% Reality: OneForma (my.oneforma.com) and Appen's revamped 2026 platform CrowdGen (crowdgen.com) use an automated certification filter—if you pass two free 15-minute language quizzes BEFORE applying, the algorithm pushes your Indian profile straight to auto-approval.",
+              "Most beginners apply with a blank profile and stay stuck on 'Pending' forever. On OneForma (my.oneforma.com) and Appen's CrowdGen (crowdgen.com), passing two free 15-minute language quizzes BEFORE applying pushes your profile straight to the front of the approval list.",
             whereToFindOrHiddenTrick:
-              "THE SECRET MECHANISM & EXACT CLICK-PATH: Go to my.oneforma.com → Register free → Click 'Certifications' in the left sidebar FIRST → Pass 'English Reading Comprehension' & 'Hindi Native' (free, 15 mins) → Then click 'Jobs → AI & LLM Evaluation' → Click 'Apply' for priority auto-approval. Repeat on crowdgen.com.",
+              "Go to my.oneforma.com → Sign up free → Click 'Certifications' on the left FIRST → Pass 'English Reading Comprehension' & 'Hindi Native' (free, 15 mins) → Then open 'Jobs → AI & LLM Evaluation' and apply. Do the same on crowdgen.com.",
             stepByStepExecution: [
-              "1️⃣ The Infiltration: Create a free Payoneer India account (payoneer.com) and link it inside OneForma's 'Payment Information' tab and CrowdGen's payout settings before touching any project.",
-              "2️⃣ The Trigger: Inside OneForma ('Certifications' tab), pass the free English and Hindi certifications first. Then apply to 'Milkyway / LLM Chat Grading' on both OneForma and CrowdGen.",
-              "3️⃣ The Leverage: Download the 4-page project guideline PDF and keep it open in a second browser tab using Ctrl+F while taking the open-book qualification quiz so you score 90%+ on attempt #1.",
-              "4️⃣ The Safety Lock: Always spend the full Recommended Rating Time (RRT) on each micro-chat turn—submitting too fast triggers automated speed-flags.",
+              "1. Setup: Make a free Payoneer India account (payoneer.com) and link it inside OneForma's 'Payment Information' tab and CrowdGen settings before starting.",
+              "2. The Move: Pass the free English and Hindi certifications inside OneForma first, then apply to open LLM chat rating projects on both OneForma and CrowdGen.",
+              "3. Scale It: Download the short project PDF and keep it open in another tab with Ctrl+F during the open-book quiz so you pass on attempt #1.",
+              "4. Stay Safe: Spend the full recommended time shown on each task timer—clicking submit too fast gets accounts flagged.",
             ],
             exactToolsOrWebsites: [
               {
                 name: "my.oneforma.com (OneForma by Centific)",
-                role: "Website #3 · High-Approval Indian Bilingual Chat & Prompt Grading Portal",
+                role: "Site #3 · Bilingual Hindi/English Chat & Prompt Rating",
                 insiderTip:
-                  "Always keep the guideline PDF open using Ctrl+F during the open-book project quiz to score 90%+ on your first attempt.",
+                  "Keep the guideline PDF open with Ctrl+F during the open-book quiz.",
               },
               {
-                name: "crowdgen.com (Appen 2026 Platform)",
-                role: "Website #4 · Global Micro-Task & Chat Response Evaluation Queue",
+                name: "crowdgen.com (Appen Platform)",
+                role: "Site #4 · Global Micro-Task & Chat Response Grading",
                 insiderTip:
-                  "Verify your phone number and Indian tax residency inside CrowdGen settings so monthly payouts process smoothly.",
+                  "Verify your phone number and Indian tax details inside settings so monthly payouts clear smoothly.",
               },
             ],
             copyPasteTemplateOrScript: {
               label:
-                "🧠 The Jedi Mind-Trick / Secret Script (3-Point Quality Lock Before Clicking Submit)",
-              content: `1. Did the chatbot answer in the exact language requested (e.g., pure Hindi vs Hinglish)?\n2. Did I verify all dates, prices, and Indian local facts via Google Search?\n3. Did I spend at least the recommended target time (RRT) per task so the quality timer never flags my account?`,
+                "Quick 3-Check Quality List Before Clicking Submit",
+              content: `1. Did the chatbot reply in the exact language asked (pure Hindi vs Hinglish)?\n2. Did I double-check any prices, dates, or Indian local facts on Google?\n3. Did I spend the normal target time on this task instead of rushing?`,
             },
             incomeMathOrProof:
-              "8 hours/week across OneForma + CrowdGen at $6–$9/hr = ~$240/month (₹20,000/month) via Payoneer with zero bidding and zero interviews.",
+              "8 hours/week across OneForma + CrowdGen at $7.50/hr = $60/week × 4 weeks = $240/month (× ₹85 = ₹20,400/month) via Payoneer.",
           },
           {
             chapterNumber: 3,
             title:
-              "Websites #5 & #6: TELUS Digital AI & Welocalize (The Open-Book Exam Loophole)",
+              "Sites #5 & #6: TELUS Digital AI & Welocalize (Open-Book Search Rating)",
             subtitle:
-              "⚠️ WARNING: Keep this strictly confidential. Long-term search & chat quality rating for Indian residents with direct bank wire transfer.",
+              "real talk: steady part-time search & chat rating paid straight to your Indian bank.",
             coreSecretSummary:
-              "The 99% Illusion: Most applicants fail the TELUS Digital and Welocalize qualification test because they try to answer from memory or personal opinion. The 1% Reality: Their entire exam is 100% open-book and based strictly on a downloadable PDF ('Needs Met' and 'Page Quality'). Once you pass using Ctrl+F, you unlock steady weekly task queues that pay directly to your Indian bank account.",
+              "Most people fail the TELUS Digital and Welocalize test because they guess from memory. The entire test is 100% open-book based on their free PDF ('Needs Met' and 'Page Quality')—once you pass using Ctrl+F, you unlock steady flexible weekly hours.",
             whereToFindOrHiddenTrick:
-              "THE SECRET MECHANISM & EXACT CLICK-PATH: Open telusinternational.ai/cmp/contributor → Filter Country: 'India' → Select 'Personalized Internet Assessor (India)' or 'AI Community Surfer'. Also open jobs.welocalize.com → Filter Location: 'Remote - India' → Apply for 'Search Quality Rater / Ads Quality Rater'.",
+              "Open telusinternational.ai/cmp/contributor → Filter Country: 'India' → Pick 'Personalized Internet Assessor (India)'. Also open jobs.welocalize.com → Filter 'Remote - India' → Apply for 'Search Quality Rater'.",
             stepByStepExecution: [
-              "1️⃣ The Infiltration: Apply on telusinternational.ai and jobs.welocalize.com using the exact primary Gmail address you use on your Chrome browser and Android phone.",
-              "2️⃣ The Trigger: When they email you the General Guidelines PDF, press Ctrl+F and bookmark the 'Needs Met (NM)' and 'Page Quality (PQ) / E-E-A-T' tables—every exam question is a clone of the examples in those two tables.",
-              "3️⃣ The Leverage: Log into RaterHub / EWOQ during evening IST hours and weekends when 'Bonus Hour' batches drop, working 10 to 20 flexible hours a week from home.",
-              "4️⃣ The Safety Lock: Complete your Hyperwallet / Direct Indian Bank Wire KYC immediately upon onboarding so weekly/monthly payouts clear with zero delay.",
+              "1. Setup: Apply on telusinternational.ai and jobs.welocalize.com using the main Gmail signed into your Chrome browser and phone.",
+              "2. The Move: When they email the Guidelines PDF, use Ctrl+F on the 'Needs Met' and 'Page Quality' tables—almost every exam question matches those exact examples.",
+              "3. Scale It: Log into RaterHub during evening IST hours and weekends when extra bonus batches drop, working 10–15 flexible hours a week.",
+              "4. Stay Safe: Finish your Hyperwallet / Direct Indian Bank KYC right after onboarding so payouts clear without holds.",
             ],
             exactToolsOrWebsites: [
               {
                 name: "telusinternational.ai",
-                role: "Website #5 · Official Indian Search & AI Chat Quality Rater Portal (Direct Bank Wire / Hyperwallet)",
+                role: "Site #5 · Search & Chat Quality Rater (Direct Bank / Hyperwallet)",
                 insiderTip:
-                  "Enable email notifications for 'Bonus Hours'—TELUS frequently offers extra task batches on weekends.",
+                  "Turn on email alerts for 'Bonus Hours'—extra tasks often drop on weekends.",
               },
               {
                 name: "jobs.welocalize.com",
-                role: "Website #6 · Non-Bidding Ads & Conversational AI Rater (Pays Weekly via Hyperwallet/PayPal)",
+                role: "Site #6 · Non-Bidding Ads & Search Quality Rater (Weekly Payouts)",
                 insiderTip:
-                  "Welocalize provides free interactive training modules inside WeLearn before you take the final qualification test.",
+                  "Complete the free WeLearn practice modules before taking the final test.",
               },
             ],
             copyPasteTemplateOrScript: {
               label:
-                "🧠 The Jedi Mind-Trick / Secret Script (The 'Needs Met' Cheat Sheet That Passes Part 3)",
-              content: `• Fully Meets (FM): The user asked for a specific target (e.g., "SBI netbanking login") and the very first result is the official login page.\n• Highly Meets (HM): The user asked an open question (e.g., "best budget smartwatch India") and the response gives an unbiased, up-to-date comparison.\n• Fails to Meet (FailsM): The response is outdated, unsafe, or answers a completely different question.`,
+                "Quick 'Needs Met' Cheat Sheet for the Open-Book Exam",
+              content: `• Fully Meets (FM): The person searched for one exact thing (like "SBI netbanking login") and the top result is the exact official page.\n• Highly Meets (HM): The person asked an open question (like "best budget earbuds India") and the page gives a clear, helpful comparison.\n• Fails to Meet (FailsM): The result is broken, outdated, or totally off-topic.`,
             },
             incomeMathOrProof:
-              "15 hours/week on TELUS / Welocalize at $5.50–$7.50/hr India rate = ~$390/month (₹32,500/month) wired straight to your Indian bank account.",
+              "15 hours/week at $6.50/hr = $97.50/week × 4 weeks = $390/month (× ₹85 = ₹33,150/month) wired to your Indian bank.",
           },
           {
             chapterNumber: 4,
             title:
-              "Websites #7 & #8: RWS TrainAI & ModSquad (Live Brand Chat & Ticket Arbitrage)",
+              "Sites #7 & #8: RWS TrainAI & ModSquad (Quiet Text Chat & Ticket Shifts)",
             subtitle:
-              "⚠️ WARNING: Keep this strictly confidential. Real non-bidding customer chat support, Discord moderation, and AI text validation.",
+              "real talk: zero phone calls—just text chat support, Discord mod shifts, and AI text checks.",
             coreSecretSummary:
-              "The 99% Illusion: People think customer support means sitting in a noisy BPO call center taking angry phone calls all night. The 1% Reality: RWS TrainAI (rws.com/trainai) and ModSquad (modsquad.com) let you pick quiet 2-hour text-chat, ticket moderation, and AI validation blocks from your bedroom laptop for global gaming, SaaS, and e-commerce brands.",
+              "People hear 'customer support' and picture a noisy call center taking angry phone calls all night. RWS TrainAI (rws.com/trainai) and ModSquad (modsquad.com) let you pick quiet 2-hour text-chat and moderation shifts from your laptop for global brands.",
             whereToFindOrHiddenTrick:
-              "THE SECRET MECHANISM & EXACT CLICK-PATH: (1) Go to rws.com/artificial-intelligence/trainai-community → Click 'Join TrainAI Community' → Select 'Work as an Individual' (NOT Agency!) → Pass the English & Hindi language test. (2) Go to modsquad.com/join-the-squad → Apply for 'Customer Support Chat & Moderation Contractor'.",
+              "Go to rws.com/artificial-intelligence/trainai-community → Click 'Join TrainAI Community' → Pick 'Work as an Individual' (NOT Agency). Also apply at modsquad.com/join-the-squad for remote chat & moderation.",
             stepByStepExecution: [
-              "1️⃣ The Infiltration: Register on RWS TrainAI ('WorkZone' portal) as an 'Individual Contributor' so invitations come directly to your inbox, and practice typing at 45+ WPM on monkeytype.com before applying on ModSquad.",
-              "2️⃣ The Trigger: On your ModSquad application, explicitly mention familiarity with written ticket tools (Zendesk, Freshdesk, Discord moderation, or Shopify order lookup) to jump ahead of generic applicants.",
-              "3️⃣ The Leverage: Book 2-hour evening or morning chat support shifts inside ModSquad and use pre-saved empathy macros so you can handle 3 live chat tabs calmly at the same time.",
-              "4️⃣ The Safety Lock: Always personalize the first and last line of every chat macro so quality auditors score your human empathy at 100%.",
+              "1. Setup: Register on RWS TrainAI as an 'Individual Contributor' so tasks come directly to you, and warm up your typing speed to 45+ WPM on monkeytype.com before applying on ModSquad.",
+              "2. The Move: On your ModSquad form, mention comfort with written ticket apps (Zendesk, Freshdesk, Discord, or Shopify order lookup).",
+              "3. Scale It: Pick 2-hour evening or morning chat shifts and keep short friendly reply templates ready so you can answer smoothly without stress.",
+              "4. Stay Safe: Always tweak the first line of any saved reply to mention the customer's actual issue so it sounds genuinely human.",
             ],
             exactToolsOrWebsites: [
               {
                 name: "rws.com/trainai (RWS WorkZone)",
-                role: "Website #7 · Global AI Chat Data & Linguistic Evaluation Portal (Pays via PayPal / Bank Transfer)",
+                role: "Site #7 · Global AI Text & Language Tasks (PayPal / Bank)",
                 insiderTip:
-                  "Make sure you select 'Individual Contributor' (not Agency) during RWS registration so you receive individual task invitations.",
+                  "Pick 'Individual Contributor' during signup—not Agency.",
               },
               {
                 name: "modsquad.com/join-the-squad",
-                role: "Website #8 · Remote Live Chat Support & Community Moderation (Hourly USD Payouts)",
+                role: "Site #8 · Remote Live Chat & Community Moderation (Hourly USD)",
                 insiderTip:
-                  "Mention experience with Zendesk, Freshdesk, Discord, or Shopify order support on your application to get placed faster.",
+                  "Mentioning Discord or Shopify support experience helps your form stand out.",
               },
             ],
             copyPasteTemplateOrScript: {
               label:
-                "🧠 The Jedi Mind-Trick / Secret Script (3-Part Live Chat De-Escalation Macro)",
-              content: `"Hi [Name], I completely understand how frustrating it is when your order status hasn't updated yet—I would feel the exact same way! I have pulled up your order #[ID] right now, verified the tracking log with our dispatch team, and applied a priority update for you. Here is what will happen in the next 24 hours..."`,
+                "Copy-Paste Calm Customer Chat Reply",
+              content: `"Hey [Name], totally get how annoying it is waiting on an order update—I'd feel the same way. I just checked order #[ID] on our end and flagged it for a priority status update. Here's what happens next over the next 24 hours..."`,
             },
             incomeMathOrProof:
-              "12 hours/week of remote chat/AI validation across RWS TrainAI & ModSquad = ~$300/month (₹25,000/month) with zero phone calls and zero bidding.",
+              "12 hours/week across RWS TrainAI & ModSquad at $6.25/hr = $75/week × 4 weeks = $300/month (× ₹85 = ₹25,500/month).",
           },
           {
             chapterNumber: 5,
             title:
-              "Websites #9 & #10: Concentrix India Non-Voice Chat & Chegg / CourseHero Early-Morning Queue",
+              "Sites #9 & #10: Concentrix India Non-Voice Chat & Chegg Early-Morning Q&A",
             subtitle:
-              "⚠️ WARNING: Keep this strictly confidential. Direct Indian bank NEFT payouts for non-voice chat support and written subject Q&A.",
+              "real talk: direct INR bank payouts for non-voice chat and written subject answers.",
             coreSecretSummary:
-              "The 99% Illusion: Students and freshers get scammed by fake Telegram 'typing jobs' that ask for a 'registration fee'. The 1% Reality: Real Indian INR bank payouts come from two legitimate backdoors: (1) Concentrix India's official 'Work At Home Non-Voice Chat Process' (jobs.concentrix.com), and (2) logging into Chegg India (cheggindia.com/qa-expert) & CourseHero between 6:30 AM and 10:30 AM IST when US student homework queues peak.",
+              "Students get burned by fake Telegram 'typing jobs' asking for registration money. Real INR payouts come straight from Concentrix India's official 'Work At Home Non-Voice Chat' portal (jobs.concentrix.com) and Chegg India (cheggindia.com/qa-expert) during the 6:30 AM – 10:30 AM IST peak window.",
             whereToFindOrHiddenTrick:
-              "THE SECRET MECHANISM & EXACT CLICK-PATH: (1) Open jobs.concentrix.com → Type 'Chat' or 'Non Voice Work From Home India' → Apply directly on the official HR portal (₹0 fee). (2) Open cheggindia.com/qa-expert → Click 'Sign Up' → Pass the online subject & guideline test → Work the 6:30 AM – 10:30 AM IST peak window.",
+              "Open jobs.concentrix.com → Search 'Chat' or 'Non Voice Work From Home India' → Apply free on their official portal. Also sign up at cheggindia.com/qa-expert and log in early morning IST when US homework queues pile up.",
             stepByStepExecution: [
-              "1️⃣ The Infiltration: For Concentrix Non-Voice Chat, apply directly at jobs.concentrix.com and prepare for the 15-minute online Versant Written grammar and chat etiquette test. For Chegg India, register with your PAN card and Indian bank IFSC.",
-              "2️⃣ The Trigger: On Chegg / CourseHero, pick a high-volume subject (Business Finance, Accounting, Statistics, Computer Science, Nursing, or Earth Science) where question rates pay ₹100–₹190 per written solution.",
-              "3️⃣ The Leverage: Log in between 6:30 AM and 10:30 AM IST—US college students submit homework overnight, so the morning IST queue has 4x more easy questions and almost zero Indian competition.",
-              "4️⃣ The Safety Lock: Format every written answer using the 3-Block Structure ('1. Core Principle -> 2. Step-by-Step Calculation -> 3. Final Boxed Takeaway') to keep your quality score above 4.6★.",
+              "1. Setup: Apply directly at jobs.concentrix.com (₹0 fee) and practice clean written English for the 15-min online Versant chat test. For Chegg India, keep your PAN card and bank IFSC ready.",
+              "2. The Move: On Chegg / CourseHero, pick a high-demand subject you actually know (Accounting, Stats, CS, Business, or Science) paying ₹100–₹190 per written answer.",
+              "3. Scale It: Log in between 6:30 AM and 10:30 AM IST—US students post questions overnight, so morning IST has way more open questions and way less rush.",
+              "4. Stay Safe: Write every solution in 3 clean parts (Rule → Steps → Final Answer) to keep your rating above 4.6★.",
             ],
             exactToolsOrWebsites: [
               {
-                name: "jobs.concentrix.com (Official India WAH Non-Voice Chat Portal)",
-                role: "Website #9 · Full-Time / Part-Time Remote Customer Chat Support (₹18,000–₹28,000/mo Direct INR Bank Salary)",
+                name: "jobs.concentrix.com (Official India Portal)",
+                role: "Site #9 · Remote Non-Voice Chat Support (₹18,000–₹28,000/mo INR Bank)",
                 insiderTip:
-                  "During the online Versant written chat assessment, focus on zero spelling mistakes and polite, solution-first sentences.",
+                  "Focus on clear spelling and polite, direct replies during the online written chat check.",
               },
               {
                 name: "cheggindia.com/qa-expert & coursehero.com/become-a-tutor",
-                role: "Website #10 · Non-Bidding Written Subject Q&A Portal (Pays ₹100–₹190/Question via Indian Bank NEFT)",
+                role: "Site #10 · Written Subject Q&A (₹100–₹190/Question via NEFT)",
                 insiderTip:
-                  "Early morning IST hours (6:30 AM – 10:00 AM) have 4x more open questions in the queue.",
+                  "6:30 AM – 10:00 AM IST is the easiest window to grab open questions.",
               },
             ],
             copyPasteTemplateOrScript: {
               label:
-                "🧠 The Jedi Mind-Trick / Secret Script (3-Block Answer Template For 4.8★ Quality Ratings)",
-              content: `Step 1 — Core Principle: State the exact rule or policy in 2 clear English sentences.\nStep 2 — Step-by-Step Breakdown: Show each logical step clearly using numbered bullet points.\nStep 3 — Final Takeaway: Summarize the exact final answer in bold at the bottom so the reader gets instant clarity.`,
+                "3-Part Written Answer Format for High Ratings",
+              content: `1. Main Idea: Explain the exact rule or formula in 2 simple lines.\n2. Step-by-Step Math/Logic: Show every step clearly on its own line.\n3. Final Answer: Bold the exact final result at the bottom so it's effortless to read.`,
             },
             incomeMathOrProof:
-              "Solving 5 written questions every morning on Chegg/CourseHero (~₹750/day) = ₹22,500/month via direct Indian bank NEFT, or ₹20,000–₹28,000/month on Concentrix Non-Voice Chat.",
+              "5 written answers/morning × ₹150 = ₹750/day × 30 days = ₹22,500/month via direct Indian bank NEFT (or ₹20,000–₹28,000/mo on Concentrix Chat).",
           },
         ],
         twentyFourHourChecklist: [
-          "Download this 12pt White-Label PDF using the 'Download White-Label PDF (.pdf)' button at the top.",
-          "Complete PAN + Bank KYC on PayPal India and Payoneer India so your USD payouts never get held.",
-          "Apply today on Website #1 (outlier.ai), Website #3 (my.oneforma.com), and Website #4 (crowdgen.com) — never copy-paste during the assessment!",
-          "Pass the free 15-minute English & Hindi certifications inside OneForma's 'Certifications' tab to unlock immediate AI chat grading projects.",
-          "Apply on TELUS Digital (telusinternational.ai) & Chegg India (cheggindia.com/qa-expert) to build 3 parallel non-bidding income streams.",
+          "Download this clean PDF using the 'Download 12pt PDF (.pdf)' button at the top.",
+          "Finish PAN + Bank KYC on PayPal India and Payoneer India so USD payouts don't get stuck.",
+          "Apply today on Site #1 (outlier.ai), Site #3 (my.oneforma.com), and Site #4 (crowdgen.com) — never paste AI text on tests.",
+          "Pass the free 15-min English & Hindi checks inside OneForma's 'Certifications' tab.",
+          "Apply on TELUS Digital (telusinternational.ai) & Chegg India (cheggindia.com/qa-expert) to build multiple income backups.",
         ],
       },
-      reelBlueprint: {
-        sixSecondVideoIdea: {
-          visualStyle:
-            "6-Second Dark Aesthetic Laptop Clip Scrolling Through All 10 Non-Bidding Chat Agent Websites",
-          shotByShot: [
-            "0.0s – 2.0s: Dark room laptop shot with bold text overlay calling out Upwork/Fiverr bidding frustration.",
-            "2.0s – 4.5s: Quick screen scroll of this 12pt PDF showing Outlier.ai, OneForma, CrowdGen, TELUS & ModSquad URLs.",
-            `4.5s – 6.0s: Zoom on the ${priceDisplay || "₹29"} access badge with CTA: 'Comment ${autoDmTrigger || "CHAT10"} for all 10 links'.`,
-          ],
-          lightingAndAudioTip:
-            "Keep the video 6 seconds long and toggle ON 'Trial Reel' before posting to reach 100% non-followers.",
-        },
-        psychologicalPriceOverlays: [
-          {
-            triggerType: "1. Anti-Bidding Relief Trigger",
-            overlayText: `"Still wasting months bidding on Upwork & Fiverr with 0 replies? Here are 10 Non-Bidding Chat & AI Text Websites where Indians get paid from Day 1 (${priceDisplay || "₹29"} Manual)."`,
-            whyItConverts:
-              "Directly solves the #1 pain point of Indian beginners (bidding competition) with 10 verified portals.",
-          },
-          {
-            triggerType: "2. Daily Snack Price Comparison",
-            overlayText: `"1 Cup of Chai & Samosa = Rs 40. This 10-Website Non-Bidding Chat Agent Playbook = ${priceDisplay || "₹29"} (Outlier, OneForma, CrowdGen, TELUS & 6 More)."`,
-            whyItConverts:
-              "Makes the PDF price a complete no-brainer compared to weekly USD payouts.",
-          },
-          {
-            triggerType: "3. Save & Auto-DM Velocity Hook",
-            overlayText: `"10 genuine websites where Indians earn via text chat & AI response grading in 2026–2027 (Zero Bidding). Comment '${autoDmTrigger || "CHAT10"}' for instant DM."`,
-            whyItConverts:
-              "Triggers massive Saves and Comments from students and remote job seekers.",
-          },
+      reelBlueprint: buildRotatingEbookReelSectionFallback({
+        ebookTitle: chatTitle,
+        chapterTitles: [
+          "Outlier.ai & DataAnnotation.tech (Get Paid to Grade AI Chats)",
+          "OneForma & Appen CrowdGen (The Free Quiz Fast-Track)",
+          "TELUS Digital AI & Welocalize (Open-Book Search Rating)",
+          "RWS TrainAI & ModSquad (Quiet Text Chat & Ticket Shifts)",
+          "Concentrix Non-Voice Chat & Chegg Early-Morning Q&A",
         ],
-        autoDmCaption: `Stop wasting months fighting 200 bidders on Upwork or falling for fake 'typing job' scams! 🤫💻\n\nI compiled the 2026–2027 Fact-Checked Playbook of 10 Genuine Non-Bidding Chat Agent & AI Text Evaluation Websites for Indians:\n✅ Websites #1 & #2: Outlier.ai & DataAnnotation.tech ($7.50–$18/hr USD grading AI chat responses)\n✅ Websites #3 & #4: OneForma & Appen CrowdGen (High-approval bilingual Hindi/English micro-chat tasks)\n✅ Websites #5 & #6: TELUS Digital AI & Welocalize (Flexible remote Search & Chat Quality Raters)\n✅ Websites #7–#10: RWS TrainAI, ModSquad Live Chat, Concentrix Non-Voice WAH & Chegg Text Q&A\n\nIncludes exact signup links, open-book assessment pass formulas, and Indian PayPal/Payoneer/NEFT setup for just ${priceDisplay || "₹29"} (instead of ${anchorPriceDisplay || "₹2,499"}).\n\n👉 Comment "${autoDmTrigger || "CHAT10"}" below and I will Auto-DM you the complete 5-Chapter PDF in 5 seconds!`,
-        seoKeywords: [
-          "non bidding chat agent jobs india",
-          "outlier ai india assessment tips",
-          "oneforma india payment proof",
-          "work from home chat support india",
-          "ai text evaluation websites india",
-          "telus international ai india",
-          "appen crowdgen india 2026",
-          "modsquad remote chat jobs",
-          "concentrix non voice chat wfh",
-          "online earning websites without investment india",
-        ],
-        hashtags: [
-          "#remotejobsindia",
-          "#workfromhomeindia",
-          "#sidehustleindia",
-          "#chatsupportjobs",
-          "#onlineearningindia",
-        ],
-      },
+        priceDisplay: priceDisplay || "₹29",
+        anchorPriceDisplay: anchorPriceDisplay || "₹2,499",
+        autoDmTrigger: autoDmTrigger || "CHAT10",
+        section: "all",
+        variationIndex: variationCount,
+      }) as EbookGenerationResult["reelBlueprint"],
     };
   }
 
   const defaultVaultTitles = [
-    "The Dark Psychology of WhatsApp DM Closing & High-Ticket Freelance Deals: 5 Behavioral Triggers That Close ₹4,999 Clients",
-    "The 6-Second Instagram Trial-Reel & Auto-DM Micro-Dossier Funnel: Turning ₹29–₹99 PDFs Into Daily UPI Cashflow",
-    "The Google Maps 'High-Review, No-Website' Local Clinic & Salon Takeover: Closing ₹3,999 Deals in 48 Hours",
-    "12 Verified Free Harvard, Tata, JPMorgan & Google Credentials + The LinkedIn 'Past 24 Hours' Founder Backdoor",
-    "The ₹150 Indian Pharmacy Generic Salt Bible: Decoding ₹3,500 Serums Into ₹180 Chemist Tubes",
-    "15 Underrated Zero-Cost AI Study, Research & Exam-Crushing Portals: Finish 6 Hours of Work in 15 Minutes",
+    "How to Close ₹2,999 Local Business Deals on WhatsApp Without Begging or Cold Calling",
+    "The 6-Second Faceless Reel + ₹29 Mini-Guide System (Zero Followers Needed)",
+    "How to Spot High-Review Local Clinics With No Website on Google Maps & Charge ₹2,999",
+    "Free Harvard, Tata & Google Certificates + The LinkedIn 'Past 24 Hours' Hiring Filter",
+    "₹200 Indian Pharmacy Skincare Salts vs ₹2,500 Viral Serums (The Real 1mg Ingredient List)",
+    "Free AI Study & Research Tools That Cut 6 Hours of College Work Into 15 Minutes",
   ];
   const isCleanPreset = BROWSER_EBOOK_TOPICS.some(
     (t) => t.toLowerCase() === rawInputTrimmed.toLowerCase()
   );
   const hasCustomTopic = rawInputTrimmed.length > 0 && !isCleanPreset;
   const cleanTopic = hasCustomTopic
-    ? `The 2026–2027 Classified 1% Execution Dossier: ${rawInputTrimmed.slice(0, 68)}`
+    ? `The 2026 No-Gatekeeping Playbook: ${rawInputTrimmed.slice(0, 68)}`
     : isCleanPreset
     ? rawInputTrimmed
     : defaultVaultTitles[Math.abs(variationCount) % defaultVaultTitles.length];
 
   const editionSubtitles = [
-    "Classified 1% Insider Dossier · Dark Psychology Triggers, Direct Backdoor Portals & Copy-Paste Scripts Anyone Can Execute Today.",
-    "The Grey-Hat Oracle Edition: Exact Search Filters, Behavioral Loopholes, Free Fortune-500 Credentials & Instant UPI Closing Scripts.",
-    "Private 2026–2027 Execution Vault: Zero Generic Fluff, Real UI Click-Paths, 50%-Advance Client Locks & Verified Global Portals.",
+    "2026 Private Playbook · Real free websites, exact search filters, and copy-paste messages you can actually use today.",
+    "Zero gatekeeping · Simple step-by-step moves, free Indian-friendly tools, and honest numbers that actually add up.",
+    "Straight to the point · Real buttons to click, exact scripts to send, and zero boring textbook lectures.",
   ];
 
   return {
@@ -501,315 +466,265 @@ export function generateInstantEbookClientSide(
     category,
     priceDisplay: priceDisplay || "₹19",
     anchorPriceDisplay: anchorPriceDisplay || "₹1,999",
-    autoDmTrigger: autoDmTrigger || "SECRET",
-    providerUsed: "2026–2027 Grey-Hat Oracle AI Engine",
+    autoDmTrigger: autoDmTrigger || "GUIDE",
+    providerUsed: "2026 Private Playbook Engine",
     ebook: {
-      editionTag: `CLASSIFIED 1% INSIDER DOSSIER · GREY-HAT ORACLE EDITION · ZERO FLUFF`,
+      editionTag: `2026 PRIVATE PLAYBOOK · REAL LINKS & COPY-PASTE SCRIPTS · ZERO FLUFF`,
       title: cleanTopic,
       subtitle: editionSubtitles[variationCount % editionSubtitles.length],
       targetReaderPromise:
-        "Every chapter in this classified dossier reveals an unconventional 1% behavioral trigger, algorithm loophole, or verified direct portal—backed by 100% real UI buttons, honest Free (₹0) rules, and word-for-word copy-paste scripts.",
+        "No boring textbook theory and no fake hype. Every play inside gives you real free websites, exact buttons to click, honest numbers, and ready-to-send scripts.",
       goldenRuleTitle:
-        "⚠️ CLASSIFIED BRIEFING: The #1 Grey-Hat Execution & 50%-Advance Safety Rule",
+        "real talk: always watermark your preview & take 50% UPI advance before doing full work",
       goldenRuleBody:
-        "Never follow the 99% crowd that begs for attention or works for free. Always use the 'Visual Loss-Aversion' sample + 50% UPI Advance lock when closing clients, use only real platform search filters, and execute one chapter completely before moving to the next.",
+        "Never waste hours doing free unpaid work for strangers hoping they'll pay later. Send 1 clean preview with a bold watermark first, collect 50% advance on UPI before finishing the rest, and test one play properly before jumping to the next.",
       hardestPartSolvedBox: {
         title:
-          "🔥 THE HARDEST PART SOLVED: 4 Classified Backdoor Filters & Real UI Click-Paths",
+          "The 4 Exact Links & Search Filters Most People Never Notice",
         exactWhereToFindMap: [
-          `1. Google Maps 'High-Review, No-Website' Filter: Search 'Dental Clinic', 'Skin Clinic', or 'Luxury Salon' in any Tier-1/Tier-2 city on Google Maps → Pick businesses with 40+ reviews that have NO 'Website' button → Pitch a ₹2,999 1-Page WhatsApp Booking Menu.`,
-          `2. Meta Ad Library Active-Spender Filter (facebook.com/ads/library): Select 'India' → 'All Ads' → Type your niche keyword → Filter by 'Active' ads running for 14+ days to find D2C brands spending ₹50,000+/month right now.`,
-          `3. Direct $10 / 15-Min Usability Testing (usertesting.com/get-paid-to-test & prolific.com): 100% free signup with a KYC-Verified Indian PayPal account (PAN + Bank linked). Pays $10 USD 14 days after each approved speak-out-loud test.`,
-          `4. LinkedIn Real 'Past 24 Hours' Post Filter + Free Harvard/Tata Credentials: Complete a free 4-hour Tata/JPMorgan simulation on theforage.com, then search '\"hiring\" AND \"remote\"' on LinkedIn → Click 'Posts' tab → 'Date posted: Past 24 hours'.`,
+          `1. Google Maps 'High Reviews, No Website' Filter: Search 'Dental Clinic', 'Skin Clinic', or 'Salon' in your city on Google Maps → Pick places with 40+ reviews and NO 'Website' button → Pitch a ₹2,999 1-page WhatsApp booking menu.`,
+          `2. Meta Ad Library Active Spenders (facebook.com/ads/library): Pick 'India' → 'All Ads' → Type your niche → Look for active ads running 14+ days to spot brands already spending money online.`,
+          `3. Paid $10 / 15-Min Website Testing (usertesting.com/get-paid-to-test & prolific.com): Free signup with a PAN-verified Indian PayPal account. Pays $10 USD 14 days after each approved speak-out-loud test.`,
+          `4. LinkedIn 'Past 24 Hours' Post Filter + Free Harvard/Tata Certs: Finish a free 4-hr Tata/JPMorgan project on theforage.com, then search '\"hiring\" AND \"remote\"' on LinkedIn → Click 'Posts' tab → 'Date posted: Past 24 hours'.`,
         ],
         zeroFollowerTrafficTrick:
-          "The 2026 Trial-Reel + Snack-Price Loop: Toggle ON 'Trial Reel' on a 6-second dark screen recording of your dossier so 100% of views come from non-followers, and connect Auto-DM so every comment receives your checkout link in 5 seconds.",
+          "How to get reach from 0 followers: post a chill 6-second everyday clip with a short relatable on-screen text and turn ON Instagram's 'Trial Reel' toggle so it tests on non-followers first.",
       },
       quickValueBreakdown: [
         {
-          metric: "1. The 99% Trap Destroyed",
+          metric: "1. Zero Boring Theory",
           detail:
-            "Replaces saturated bidding wars with direct backdoor filters and behavioral psychology triggers.",
+            "Skips generic gyaan and goes straight to real free tools and exact steps.",
         },
         {
-          metric: "2. 50% Advance + Watermark Lock",
-          detail: `Send only 1 watermarked preview first; never deliver unwatermarked files without 50% UPI advance.`,
+          metric: "2. 50% UPI Safety Rule",
+          detail: `Send 1 watermarked preview first; never send final files without 50% UPI advance.`,
         },
         {
-          metric: "3. 100% Free (₹0) Verified Tools",
+          metric: "3. 100% Free (₹0) Tools",
           detail:
-            "Every portal and tool inside (Google Maps, Meta Ad Library, Forage, Harvard CS50x, NotebookLM) is ₹0 to start.",
+            "Every website inside (Google Maps, Meta Ad Library, Forage, Harvard CS50x, NotebookLM) is ₹0 to start.",
         },
         {
-          metric: "4. Copy-Paste Jedi Scripts",
+          metric: "4. Copy-Paste Messages",
           detail:
-            "Includes word-for-word WhatsApp closing scripts, LinkedIn DM hooks, and 1mg Salt lookup formulas.",
+            "Includes ready-to-send WhatsApp pitches, LinkedIn DMs, and the 1mg salt lookup list.",
         },
       ],
       chapters: [
         {
           chapterNumber: 1,
-          title: "The Dark Psychology of WhatsApp Closing & The 'Visual Loss-Aversion' Client Exploit",
+          title: "Close ₹2,999 Local Clinic & Salon Deals on WhatsApp With 1 Watermarked Preview",
           subtitle:
-            "⚠️ WARNING: Keep this strictly confidential. — How to make local business owners and D2C brands pay 50% UPI advance within 15 minutes (₹0 cost).",
+            "real talk: how to get local businesses to reply fast and pay 50% UPI advance (₹0 cost).",
           coreSecretSummary:
-            "The 99% Illusion: Normal freelancers send boring text messages saying 'Hi Sir, I do graphic design/video editing/websites, please hire me'—and get blocked or ignored 99% of the time. The 1% Reality: The human brain is wired to ignore generic offers, but it physically cannot ignore seeing its own business losing money in a live visual screenshot. When you show a business owner a 1-screen 'Before vs. After' preview of their own listing with a diagonal watermark, you trigger instant Loss Aversion.",
+            "Most beginners send boring messages like 'Hi Sir, I make websites/designs, please hire me' and get left on seen. Business owners ignore pitches, but they stop instantly when they see a finished preview made specifically for THEIR shop with a watermark across it.",
           whereToFindOrHiddenTrick:
-            "THE GREY-HAT MECHANISM (GOOGLE MAPS + META AD LIBRARY): Open Google Maps and search 'Skin Clinic', 'Dental Studio', or 'Boutique' in any major neighbourhood, OR open facebook.com/ads/library (Country: India -> Status: Active). Pick businesses that have 40+ customer reviews (proving they have cashflow) but either have no booking website or use dull, unstyled product photos.",
+            "Open Google Maps and search 'Skin Clinic', 'Dental Clinic', or 'Boutique' in any busy area, OR check facebook.com/ads/library (India → Active Ads). Pick places that already have 40+ Google reviews (meaning they have paying customers) but no website button or weak photos.",
           stepByStepExecution: [
-            "1️⃣ The Infiltration: Pick 5 high-review local businesses on Google Maps or active advertisers on facebook.com/ads/library. Take 1 public photo or menu from their page without asking for permission first.",
-            "2️⃣ The Trigger: Use Canva or AI to turn that 1 photo into a luxury 4K WhatsApp Booking Card or Ad Creative, and place a bold 40%-opacity diagonal watermark across the middle: 'CUSTOM PREVIEW FOR [BUSINESS NAME]'.",
-            "3️⃣ The Leverage: Send the watermarked image directly to their business WhatsApp number with the 3-sentence 'Loss-Aversion' script below, offering a ₹250 1-page unwatermarked test or a ₹2,999 complete pack.",
-            "4️⃣ The Safety Lock: Strictly enforce the 50% UPI Advance Rule—collect ₹1,500 via UPI before creating the remaining pages, and release the final unwatermarked link only after the remaining 50% is paid.",
+            "1. Setup: Pick 5 high-review local shops on Google Maps that have no website link. Save 1 public photo or price list from their Maps listing.",
+            "2. The Move: Use free Canva or Carrd to turn that into a clean 1-page WhatsApp booking card, and slap a bold diagonal watermark across the middle: 'SAMPLE PREVIEW FOR [SHOP NAME]'.",
+            "3. Scale It: WhatsApp that watermarked screenshot to their business number with the short 3-line message below, offering the single preview for ₹250 or the full booking setup for ₹2,999.",
+            "4. Stay Safe: Always collect 50% UPI advance (₹1,500) before making the full version, and remove the watermark only after the remaining ₹1,499 hits your UPI.",
           ],
           exactToolsOrWebsites: [
             {
-              name: "google.com/maps & facebook.com/ads/library (100% Free ₹0)",
-              role: "Find Cash-Rich Local Clinics, Salons & Active D2C Advertisers",
+              name: "google.com/maps & facebook.com/ads/library (Free ₹0)",
+              role: "Spot Busy Local Clinics, Salons & Active Indian Brands",
               insiderTip:
-                "Filter for businesses with 40+ Google Reviews but no website button—they already have customers and money, they just lack digital packaging.",
+                "Look for 40+ Google reviews with no website button—they already have customers, just messy online links.",
             },
             {
               name: "canva.com & carrd.co (Free Tier)",
-              role: "Build 1-Page Watermarked Previews & WhatsApp Booking Funnels",
+              role: "Build Clean 1-Page Previews & WhatsApp Booking Pages",
               insiderTip:
-                "Always place your semi-transparent watermark directly across the center of the design so nobody can screenshot it without paying.",
+                "Put the watermark right across the middle so nobody can just crop and steal your sample.",
             },
           ],
           copyPasteTemplateOrScript: {
-            label: "🧠 The Jedi Mind-Trick / Secret Script (WhatsApp Loss-Aversion Pitch)",
-            content: `"Hi [Business Name] team! I noticed you have 45+ great Google reviews, but when customers click your profile, there is no instant 1-tap WhatsApp catalog/booking page—so many buyers drop off to competitors.\n\nI already built a custom 4K preview specifically for [Business Name] (attached with watermark). I can unlock this single asset for ₹250 today, or build your complete 10-page WhatsApp Conversion Kit for ₹2,999 (50% advance, 50% on completion). Which option works best for you?"`,
+            label: "Copy-Paste WhatsApp Message That Actually Gets Replies",
+            content: `"Hey [Business Name] team! Saw you have 45+ great reviews on Google Maps, but there's no quick 1-tap WhatsApp booking/menu link on your profile yet.\n\nI quickly mocked up a sample preview just for [Business Name] (attached with watermark). I can unlock this single page for ₹250 today, or set up your full WhatsApp booking kit for ₹2,999 (50% advance, 50% when done). Want me to send the clean version?"`,
           },
           incomeMathOrProof:
-            "Exact Math: 2 local clinic or D2C brand packages/week × ₹2,999 = ₹5,998/week × 4 weeks = ₹23,992/month (with 50% UPI advance safety and ₹0 ad spend).",
+            "2 local shop setups/week × ₹2,999 = ₹5,998/week × 4 weeks = ₹23,992/month with ₹0 ad spend.",
         },
         {
           chapterNumber: 2,
-          title: `The 6-Second Instagram 'Trial-Reel' & Snack-Price Auto-DM Arbitrage`,
+          title: `Turn 6-Second Faceless Reels Into Daily ${priceDisplay || "₹29"} Mini-Guide UPI Sales`,
           subtitle:
-            "⚠️ WARNING: Keep this strictly confidential. — How anonymous 0-follower pages turn 6-second dark screen loops into automated daily UPI payouts.",
-          coreSecretSummary: `The 99% Illusion: Normal creators spend 5 hours dancing on camera, writing 30 hashtags, and praying for followers before they ever make ₹1. The 1% Reality: Instagram's 'Trial Reel' toggle pushes your video to 100% non-followers to test watch-time—and a 6-second dark aesthetic video with a 'Snack-Price Comparison' text overlay forces viewers to loop the video 3 times (300% retention) while reading, triggering massive algorithmic reach and instant impulse buys.`,
-          whereToFindOrHiddenTrick: `THE GREY-HAT MECHANISM (6-SECOND RETENTION LOOP + AUTO-DM): When a video is only 6 seconds long and features a 3-line psychological hook comparing a ₹29/₹49 classified dossier to a ₹60 plate of momos, the viewer's brain takes 12–15 seconds to finish reading. By the time they finish reading, the 6-second video has replayed 2.5 times—tricking the Instagram algorithm into flagging your Reel as a top-1% high-retention clip!`,
+            "real talk: how tiny 0-follower pages sell simple mini-guides using Trial Reels & Auto-DM.",
+          coreSecretSummary: `Most people think you need 50K followers, ring lights, and loud dancing reels to earn online. In reality, a calm 6-second everyday clip with a short 2-line relatable text replays twice while people read it—pushing the Reel to thousands of non-followers and triggering instant comment-to-DM requests.`,
+          whereToFindOrHiddenTrick: `When your Reel is only 6 seconds long and the on-screen text takes 8–10 seconds to read, viewers naturally let it loop once or twice. Turn ON Instagram's built-in 'Trial Reel' toggle before posting so Instagram shows it to non-followers first, and let free Auto-DM send your ${priceDisplay || "₹29"} link automatically.`,
           stepByStepExecution: [
-            "1️⃣ The Infiltration: Export this 5-chapter classified dossier as a clean 12pt PDF and upload it to SuperProfile.bio, Cosmofeed, or Gumroad so buyers can pay via GPay/PhonePe/Paytm in 10 seconds.",
-            "2️⃣ The Trigger: Record a 6-second dark-mode screen scroll of the PDF chapters, add the 'Snack-Price Anchoring' text overlay below, and toggle ON 'Trial Reel' before hitting publish.",
-            "3️⃣ The Leverage: Connect a free Auto-DM automation (ManyChat, SuperProfile Auto-DM, or Zorcha) triggered by a single 1-word comment ('SECRET' or 'VAULT') so every commenter gets the checkout link in their DM within 5 seconds.",
-            "4️⃣ The Safety Lock: Add a ₹99 'Complete Bundle Order Bump' on the checkout page—30% of ₹29 buyers automatically tick the upgrade box, tripling your average order value effortlessly.",
+            "1. Setup: Download this clean PDF and upload it to SuperProfile.bio, Cosmofeed, or Gumroad so buyers can pay via GPay/PhonePe in 10 seconds.",
+            "2. The Move: Film a casual 6-second real-life clip (chai boiling, rainy balcony, notebook flip, late-night scroll), put one short non-salesy line on screen, and toggle ON 'Trial Reel'.",
+            "3. Scale It: Connect free Auto-DM (SuperProfile Auto-DM or ManyChat) on one easy comment word ('GUIDE' or 'SEND') so every commenter gets your checkout link in 5 seconds.",
+            "4. Stay Safe: Add a ₹99 'Bonus Bundle' tick-box on checkout—roughly 1 in 3 buyers adds it automatically, bumping up your daily total with zero extra work.",
           ],
           exactToolsOrWebsites: [
             {
               name: "superprofile.bio / cosmofeed.com (Free Setup)",
-              role: "Instant Indian UPI Checkout Page + Automated Comment-to-DM Delivery",
+              role: "Instant Indian UPI Checkout + Auto-DM Delivery",
               insiderTip:
-                "Enable the 1-click UPI intent flow so mobile buyers complete payment in under 8 seconds without typing card numbers.",
+                "Turn on 1-tap UPI checkout so mobile buyers finish paying in under 10 seconds.",
             },
             {
-              name: "Instagram 'Trial Reel' Toggle (Built-In Feature)",
-              role: "Distributes Your 6-Second Reel to 100% Non-Followers First",
+              name: "Instagram 'Trial Reel' Toggle (Built-In)",
+              role: "Tests Your 6-Second Reel on Non-Followers First",
               insiderTip:
-                "Use strictly 5 niche hashtags and keep the video between 5.5 and 6.5 seconds for maximum loop retention.",
+                "Keep clips around 6 seconds and stick to 4–5 normal niche hashtags—skip spammy tags.",
             },
           ],
           copyPasteTemplateOrScript: {
-            label: "🧠 The Jedi Mind-Trick / Secret Script (High-Converting 6s On-Screen Hook)",
-            content: `"1 Plate Street Momos = ₹60 (Gone in 5 minutes).\nThis Classified 5-Chapter Execution Dossier = ${priceDisplay || "₹29"} (Exact backdoor links, psychological scripts & zero-fluff systems).\nComment '${autoDmTrigger || "SECRET"}' below & check your DM in 5 seconds."`,
+            label: "Copy-Paste 6-Second Reel Text (Zero Salesy Vibe)",
+            content: `"spent 3 days putting all the real free links & scripts into one tiny doc so my friends don't waste months googling\n\nkept it at ${priceDisplay || "₹29"} (literally less than cold coffee) — drop '${autoDmTrigger || "GUIDE"}' and i'll send it over"`,
           },
           incomeMathOrProof:
-            "Exact Math: (15 sales/day × ₹29 = ₹435) + (4 bundle upgrades/day × ₹99 = ₹396) = ₹831/day × 30 days = ₹24,930/month running on automated checkout.",
+            "(15 guides/day × ₹29 = ₹435) + (4 bundle add-ons/day × ₹99 = ₹396) = ₹831/day × 30 days = ₹24,930/month.",
         },
         {
           chapterNumber: 3,
-          title: "Paid $10 / 15-Minute Usability Testing (UserTesting, Trymata & Prolific — The Think-Out-Loud Trigger)",
+          title: "Get Paid $10 for 15-Min Website Feedback (UserTesting, Trymata & Prolific)",
           subtitle:
-            "⚠️ WARNING: Keep this strictly confidential. Exact Indian PayPal KYC rules, how to pass the unpaid practice test, and realistic weekly USD payouts.",
+            "real talk: exact Indian PayPal setup, passing the practice test, and realistic weekly USD math.",
           coreSecretSummary:
-            "The 99% Illusion: People waste hours on 10-cent survey apps that disqualify them at the final screen. The 1% Reality: UserTesting.com and Trymata.com pay a flat $10 USD for a 15-minute screen recording where you test a company's website prototype and speak your thoughts out loud—and Prolific.com pays £6–£10/hr GBP for university AI studies with zero disqualifications once a study appears on your dashboard.",
+            "Most people waste hours on 10-cent survey apps that kick them out at the end. UserTesting.com and Trymata.com pay a flat $10 USD for a 15-minute screen recording where you test a website and talk out loud—and Prolific.com pays £6–£10/hr GBP for short university studies with zero sudden disqualifications.",
           whereToFindOrHiddenTrick:
-            "THE SECRET MECHANISM & CONTINUOUS SPEAKING RULE: Apply free at usertesting.com/get-paid-to-test, trymata.com/get-paid-to-test, and app.prolific.com/register/participant. The secret to passing the 7-minute unpaid practice test on attempt #1 is the '3-Second Narration Rule': never click in silence—continuously speak what you expect a button to do BEFORE you click it.",
+            "Sign up free at usertesting.com/get-paid-to-test, trymata.com/get-paid-to-test, and app.prolific.com/register/participant. The whole trick to passing the 7-min practice test on try #1 is simple: never go silent—say what you expect a button to do right before you click it.",
           stepByStepExecution: [
-            "1️⃣ The Infiltration: Verify your Indian PayPal account with your PAN card and Indian bank account first—both UserTesting ($10 USD) and Prolific (£ GBP) require a KYC-verified PayPal to release payouts.",
-            "2️⃣ The Trigger: Take the 7-minute unpaid UserTesting practice test in a silent room (fan off) and narrate every thought out loud using the 3-sentence template below.",
-            "3️⃣ The Leverage: Keep UserTesting and Prolific (with the free 'Prolific Assistant' Chrome extension) open in a pinned tab between 7:30 PM and 11:30 PM IST when US and UK UX researchers push new tests live.",
-            "4️⃣ The Safety Lock: Never fake answers on demographic screeners—honest consistency keeps your tester quality rating at 4.5★+ so you get priority $10 invitations (paid exactly 14 days after each test).",
+            "1. Setup: Verify your Indian PayPal account with your PAN card and Indian bank account first—both UserTesting ($10 USD) and Prolific (£ GBP) pay out through KYC-verified PayPal.",
+            "2. The Move: Record the 7-min unpaid practice test in a quiet room (switch off the ceiling fan!) and talk naturally using the 3-line formula below.",
+            "3. Scale It: Keep UserTesting and Prolific (with the free 'Prolific Assistant' Chrome extension) open between 7:30 PM and 11:30 PM IST when US/UK tests go live.",
+            "4. Stay Safe: Never lie on profile screeners—honest answers keep your rating at 4.5★+ so you keep getting $10 invites (paid 14 days after each test).",
           ],
           exactToolsOrWebsites: [
             {
               name: "usertesting.com/get-paid-to-test",
-              role: "$10 USD per 15–20 Min Recorded Website/App Test (Pays 14 Days Later via PayPal)",
+              role: "$10 USD per 15–20 Min Website Test (Paid 14 Days Later via PayPal)",
               insiderTip:
-                "Researchers pay to hear where you get confused—always mention both what is clear and what could be improved.",
+                "Teams actually want to hear where you got confused—don't pretend everything looks perfect.",
             },
             {
               name: "prolific.com",
-              role: "Verified University & AI Training Studies (Pays GBP £6–£10/hr via PayPal)",
+              role: "University & AI Studies (£6–£10/hr via PayPal)",
               insiderTip:
-                "Requires government ID verification and a brief waitlist, but every study appearing on your dashboard is pre-qualified.",
+                "Has a short waitlist and ID check, but every study on your dashboard is already matched to you.",
             },
           ],
           copyPasteTemplateOrScript: {
-            label: "🧠 The Jedi Mind-Trick / Secret Script (3-Sentence Think-Out-Loud Formula For 5★ Ratings)",
-            content: `"1. Right now I am looking at [Section] because the task asked me to find [Goal].\n2. My first impression is that [Element] is easy to spot, but I am confused why [Missing Detail] isn't shown clearly.\n3. Before clicking this button, I expect the next page to show me [Expected Result]."`,
+            label: "Copy-Paste 3-Line Speak-Out-Loud Formula (Passes Test #1)",
+            content: `"1. Right now I'm looking at [Section] to find [Task Goal].\n2. First impression: [Part] is super clear, though I'm slightly confused why [Detail] isn't shown upfront.\n3. Before I click this button, I'm expecting it to take me to [Expected Page]."`,
           },
           incomeMathOrProof:
-            "Exact Math: (2 UserTesting sessions/week × $10 = $20) + (2 hrs Prolific/week × $7.50 = $15) = $35/week × 4 weeks = $140/month (× ₹85 = ₹11,900/month) via PayPal with ₹0 investment.",
+            "(2 UserTesting clips/week × $10 = $20) + (2 hrs Prolific/week × $7.50 = $15) = $35/week × 4 weeks = $140/month (× ₹85 = ₹11,900/month) via PayPal.",
         },
         {
           chapterNumber: 4,
-          title: "Adobe Stock AI Contributor (The 60% Copy-Space Commercial Backdoor)",
+          title: "Upload Clean Indian Festive Backgrounds to Adobe Stock for Passive USD Royalties",
           subtitle:
-            "⚠️ WARNING: Keep this strictly confidential. How to legally upload 4000px+ Indian Festive Copy-Space AI Backgrounds to Adobe Stock for passive USD royalties.",
+            "real talk: why 60% empty space backgrounds get approved while random AI portraits get rejected.",
           coreSecretSummary:
-            "The 99% Illusion: Amateur creators upload random AI portraits of faces with 6 fingers to stock sites and get 100% rejected. The 1% Reality: Graphic designers and ad agencies on Adobe Stock (`contributor.stock.adobe.com`) desperately buy clean Indian festive, wedding, and architectural backgrounds that leave 60% blank 'copy space' in the center so they can type their client's offer text over it.",
+            "Beginners upload random AI faces with weird hands to stock sites and get rejected every single time. Designers and ad agencies on Adobe Stock (contributor.stock.adobe.com) actually buy clean Indian wedding, festive, and minimal backgrounds that leave 60% blank space so they can put their own text on top.",
           whereToFindOrHiddenTrick:
-            "THE SECRET MECHANISM & 3 REAL ADOBE STOCK RULES: Join contributor.stock.adobe.com (100% ₹0 free). To get 90%+ approval: (1) Always leave 60% empty copy-space in the center or left side, (2) Upscale every image to at least 4 Megapixels (4000×2666 px) using free upscayl.org, and (3) Tick the mandatory 'Created using generative AI tools' checkbox during upload.",
+            "Join contributor.stock.adobe.com (free ₹0). Three simple rules for high approval: (1) leave 60% clean empty space in the middle or side, (2) upscale every image to 4000×2666 px using free upscayl.org, and (3) always tick the 'Created using generative AI tools' checkbox.",
           stepByStepExecution: [
-            "1️⃣ The Infiltration: Create your free contributor account at contributor.stock.adobe.com and fill out the 2-minute online W-8BEN tax form (reduces US withholding tax for Indian residents).",
-            "2️⃣ The Trigger: Generate clean, text-free Indian festive, Diwali, and royal Rajasthani arch backgrounds with 60% empty copy-space using the prompt below.",
-            "3️⃣ The Leverage: Upscale every image to 4000×2666 px on upscayl.org or iloveimg.com/upscale-image so it easily passes Adobe's 4MP technical inspection.",
-            "4️⃣ The Safety Lock: Tick 'Created using generative AI tools', never put real brand names (like Apple, Nike, or Taj Mahal) in your title, and add 25 buyer-intent English keywords.",
+            "1. Setup: Create a free account on contributor.stock.adobe.com and fill out the 2-minute online W-8BEN tax form (lowers US tax cut for Indian residents).",
+            "2. The Move: Generate clean, text-free Indian festive, marigold, or minimal warm backgrounds with 60% blank space using the prompt below.",
+            "3. Scale It: Upscale every image to 4000×2666 px on upscayl.org or iloveimg.com/upscale-image so it clears Adobe's 4MP size check.",
+            "4. Stay Safe: Always tick 'Created using generative AI tools', skip brand names (like Apple, Nike, or Taj Mahal) in titles, and add 20–25 normal search keywords.",
           ],
           exactToolsOrWebsites: [
             {
               name: "contributor.stock.adobe.com",
-              role: "100% Free-to-Join Global Stock Marketplace (Pays 33% Royalty in USD)",
+              role: "Free Global Stock Site (Pays 33% Royalty in USD)",
               insiderTip:
-                "Withdrawals unlock at $25 USD via Payoneer or PayPal.",
+                "Cash out starts at $25 USD via Payoneer or PayPal.",
             },
             {
               name: "upscayl.org / iloveimg.com/upscale-image",
-              role: "Free AI Image Upscaler (4MP+ Required by Adobe)",
+              role: "Free Image Upscaler (Gets You Past 4MP Check)",
               insiderTip:
-                "Always inspect borders and corners at 100% zoom before submitting.",
+                "Zoom in on the corners before uploading to make sure there are no messy artifacts.",
             },
           ],
           copyPasteTemplateOrScript: {
-            label: "🧠 The Jedi Mind-Trick / Secret Script (High-Approval 60% Copy-Space Prompt)",
-            content: `"Minimalist luxury royal Rajasthani palace arch background with soft warm golden bokeh lights, 65% clean empty cream copy space in the center for text overlay, 8k photorealistic commercial background, no text, no letters, no watermark."`,
+            label: "Copy-Paste 60% Empty-Space Background Prompt",
+            content: `"Minimal warm cream Indian festive arch background with soft marigold petals along the bottom edge and gentle warm daylight, 65% clean empty space in the center for text, crisp natural photo look, no text, no letters, no watermark."`,
           },
           incomeMathOrProof:
-            "150+ approved Indian festive copy-space backgrounds = ongoing passive USD royalties ($0.33–$2.64 per download) working 24/7 with 0 followers.",
+            "150+ approved festive backgrounds earn $0.33–$2.64 per download on autopilot—passive USD royalties with 0 followers.",
         },
         {
           chapterNumber: 5,
-          title: "Free Verified Credentials (Harvard CS50x & Forage), LinkedIn 24-Hr Filter & ₹150 Pharmacy Salts",
+          title: "Free Harvard & Tata Certs + LinkedIn 'Past 24 Hours' Filter + ₹200 Pharmacy Salts",
           subtitle:
-            "⚠️ WARNING: Keep this strictly confidential. 100% free verifiable credentials + LinkedIn's real 'Posts -> Past 24 hours' filter + 1mg Salt Composition loophole.",
+            "real talk: stop paying ₹25,000 for weak courses or ₹2,500 for hyped serums.",
           coreSecretSummary:
-            "The 99% Illusion: People pay ₹25,000 for fake coaching certificates, apply to 30-day-old job listings with 2,000 applicants, and spend ₹2,500 on overhyped Instagram skincare serums. The 1% Reality: You can get official Tata/Deloitte/Harvard certificates for ₹0, message founders within 24 hours of their hiring post on LinkedIn, and buy the exact same active skincare molecules at an Indian pharmacy for ₹200.",
+            "People pay ₹25,000 for random coaching certificates, apply to 30-day-old job posts with 2,000 applicants, and spend ₹2,500 on Instagram serums. You can get real Tata/Deloitte/Harvard certificates for ₹0, DM founders within 24 hours of their LinkedIn hiring post, and find the exact same skincare ingredients at an Indian chemist for ₹200.",
           whereToFindOrHiddenTrick:
-            "THE SECRET MECHANISM & REAL CLICK-PATHS: (1) LinkedIn Backdoor: Type '\"hiring\" AND \"remote\"' in LinkedIn search → Click 'Posts' tab (NOT Jobs!) → Click 'Date posted' → Select 'Past 24 hours'. (2) 1mg Salt Loophole: Open 1mg.com → Type any ₹2,500 serum → Click the 'SALT COMPOSITION' link right under the product title to reveal ₹200 regulated pharma equivalents.",
+            "(1) LinkedIn Trick: Search '\"hiring\" AND \"remote\"' → Click 'Posts' tab (NOT Jobs!) → Click 'Date posted' → Pick 'Past 24 hours'. (2) 1mg Trick: Open 1mg.com → Type any pricey serum → Click the 'SALT COMPOSITION' link right under the name to see ₹200 pharma tubes.",
           stepByStepExecution: [
-            "1️⃣ The Infiltration: Complete 1 free 4-hour virtual job simulation on theforage.com (Tata Group, JPMorgan, or Deloitte) and enroll at cs50.harvard.edu/x directly (skip paid edX) for a free verified Harvard certificate.",
-            "2️⃣ The Trigger: Use the LinkedIn 'Posts -> Date posted: Past 24 hours' filter every morning to find founders who posted their email address directly in a hiring post.",
-            "3️⃣ The Leverage: Check regulated Indian pharmacy equivalents on 1mg.com (always patch test): 'Aziderm 10% Cream' (~₹245, Micro Labs) for dark spots; 'Glyco 6 Cream' (~₹200, Micro Labs — 2x/week at night + SPF 50 next morning) for dullness; 'Hyalugel' (~₹250, Ethicare) for oil-free hydration.",
-            "4️⃣ The Safety Lock: Use notebooklm.google.com (100% free) -> Upload any complex project PDF -> Click 'Audio Overview' to master any client brief 10x faster.",
+            "1. Setup: Finish 1 free 4-hr project on theforage.com (Tata, JPMorgan, or Deloitte) and sign up at cs50.harvard.edu/x directly (skip paid edX) for a free verified Harvard certificate.",
+            "2. The Move: Check LinkedIn's 'Posts → Past 24 hours' filter every morning to spot founders who dropped their direct email in a fresh hiring post.",
+            "3. Scale It: Look up regulated Indian pharmacy basics on 1mg.com (always patch test first): Aziderm 10% Cream (~₹245) for marks, Glyco 6 Cream (~₹200, 2x/week at night + SPF 50 morning) for glow, Hyalugel (~₹250) for light hydration.",
+            "4. Stay Safe: Drop long PDFs into free notebooklm.google.com → Click 'Audio Overview' to turn boring study notes into a quick 10-min podcast.",
           ],
           exactToolsOrWebsites: [
             {
               name: "theforage.com & cs50.harvard.edu/x",
-              role: "100% Free Verifiable Corporate & Harvard Certificates",
+              role: "Free Verified Corporate & Harvard Certificates",
               insiderTip:
-                "Pair your certificate with a 1-page custom sample when DMing hiring managers found via LinkedIn's 'Past 24 hours' post filter.",
+                "Attach a 1-page sample when messaging founders found via LinkedIn's 24-hour filter.",
             },
             {
-              name: "1mg.com (Salt Composition Link) & notebooklm.google.com",
-              role: "Regulated Pharma Ingredient Lookup & Free Google AI Study Tool",
+              name: "1mg.com & notebooklm.google.com",
+              role: "Chemist Salt Lookup & Free Google AI Study Buddy",
               insiderTip:
-                "Never mix Glycolic Acid and Azelaic Acid in the same night routine, and always apply SPF 50 the next morning.",
+                "Never layer Glycolic Acid and Azelaic Acid on the same night, and always wear SPF 50 next morning.",
             },
           ],
           copyPasteTemplateOrScript: {
-            label: "🧠 The Jedi Mind-Trick / Secret Script (Indian Chemist Salt Cheat-Code List)",
-            content: `1. Aziderm 10% Cream (~₹245, Micro Labs) -> Post-acne marks & uneven tone\n2. Glyco 6 Cream (~₹200, Micro Labs) -> 2x/week night exfoliation (+ SPF 50 next morning)\n3. Hyalugel (~₹250, Ethicare) -> Pure Hyaluronic Acid gel (apply on damp skin)\n4. UV Doux Silicone Sunscreen Gel SPF 50 -> Dermatologist matte sunscreen`,
+            label: "Indian Pharmacy Skincare Salt Cheat Sheet",
+            content: `1. Aziderm 10% Cream (~₹245, Micro Labs) → Post-acne marks & uneven tone\n2. Glyco 6 Cream (~₹200, Micro Labs) → 2x/week night exfoliation (+ SPF 50 morning)\n3. Hyalugel (~₹250, Ethicare) → Pure Hyaluronic Acid gel (apply on damp skin)\n4. UV Doux Silicone Sunscreen Gel SPF 50 → Matte dermatologist sunscreen`,
           },
           incomeMathOrProof:
-            "Saves ₹15,000+/year on courses and overpriced serums while giving you 100% verifiable Harvard & Fortune-500 credentials.",
+            "Saves ₹15,000+/year on overhyped courses & skincare while giving you real verifiable Harvard & Tata credentials.",
         },
       ],
       twentyFourHourChecklist: [
-        "Download this 12pt white-label PDF using the 'Download 12pt PDF (.pdf)' button at the top.",
-        "Open Google Maps or facebook.com/ads/library -> Find 5 high-review local clinics or active D2C brands -> Send 1 WATERMARKED preview (collect 50% UPI advance before full delivery!).",
-        "Sign up free on usertesting.com/get-paid-to-test & prolific.com (with KYC-verified Indian PayPal).",
-        "Upload 5 upscaled 4000px+ Indian festive copy-space backgrounds to contributor.stock.adobe.com (tick 'Created using generative AI tools').",
-        "Complete 1 free corporate simulation on theforage.com and test the LinkedIn 'Posts -> Date posted: Past 24 hours' filter.",
+        "Download this clean PDF using the 'Download 12pt PDF (.pdf)' button at the top.",
+        "Open Google Maps → Pick 5 high-review local shops with no website → Send 1 WATERMARKED preview (always take 50% UPI advance before finishing!).",
+        "Sign up free on usertesting.com/get-paid-to-test & prolific.com (with PAN-verified PayPal).",
+        "Upload 5 upscaled 4000px+ Indian festive backgrounds to contributor.stock.adobe.com (tick the AI checkbox).",
+        "Finish 1 free project on theforage.com and test LinkedIn's 'Posts → Past 24 hours' filter.",
       ],
     },
-    reelBlueprint: {
-      sixSecondVideoIdea: {
-        visualStyle:
-          "6-Second Dark Aesthetic Clip (Laptop in Dark Room / Live Scroll of This Classified 1% Dossier PDF)",
-        shotByShot: [
-          "0.0s – 2.0s: Moody dark aesthetic shot of laptop typing or iced coffee pour with bold Price Comparison overlay.",
-          "2.0s – 4.5s: Smooth screen recording scrolling through the 5 classified chapters showing exact backdoor links & Jedi scripts.",
-          `4.5s – 6.0s: Quick zoom on the ${priceDisplay} (vs ${anchorPriceDisplay}) access page with CTA: 'Comment ${autoDmTrigger} for instant link'.`,
-        ],
-        lightingAndAudioTip:
-          "Keep the clip strictly 6 seconds so viewers loop it 2–3 times while reading the overlay. Toggle ON 'Trial Reel' to hit 100% non-followers.",
-      },
-      psychologicalPriceOverlays: [
-        {
-          triggerType: "1. Daily Snack Price-Comparison Trigger",
-          overlayText: `"1 Plate Momo = Rs 60 (Gone in 5 mins). This Classified 1% Dossier = ${priceDisplay} (Exact Backdoor Links, Psychological Scripts & Free Harvard/Tata Portals). Choice is yours."`,
-          whyItConverts: `Makes ${priceDisplay} feel smaller than a daily snack while anchoring the value to real, verified 2026–2027 portals.`,
-        },
-        {
-          triggerType: "2. The 'Zero Affiliate / Zero Generic' Hook",
-          overlayText: `"Tired of every PDF teaching the same boring advice? Inside this ${priceDisplay} classified dossier: Dark Psychology Closing, Trial-Reel Funnels & ₹150 Pharmacy Salts."`,
-          whyItConverts:
-            "Directly calls out the boredom of generic Instagram PDFs and hooks viewers with specific, verified systems.",
-        },
-        {
-          triggerType: "3. Extreme FOMO / Gatekeeping Hook",
-          overlayText: `"5 classified 2026–2027 loopholes & websites 99% of people in India still don't know (${cleanTopic.slice(0, 38)}). Comment '${autoDmTrigger}' for instant DM."`,
-          whyItConverts:
-            "Creates intense FOMO and drives high comment velocity for the late-2026 algorithm.",
-        },
+    reelBlueprint: buildRotatingEbookReelSectionFallback({
+      ebookTitle: cleanTopic,
+      chapterTitles: [
+        `Close ₹2,999 Local Clinic & Salon Deals on WhatsApp`,
+        `Turn 6-Second Faceless Reels Into Daily Mini-Guide UPI Sales`,
+        `Get Paid $10 for 15-Min Website Feedback (UserTesting & Prolific)`,
+        `Upload Clean Indian Festive Backgrounds to Adobe Stock`,
+        `Free Harvard & Tata Certs + LinkedIn 24-Hr Filter + ₹200 Pharmacy Salts`,
       ],
-      autoDmCaption: `Everyone on Instagram is repeating the exact same generic advice—that's why 99% of people get stuck on Day 1! 🤫✨\n\nI put together the Classified 1% Execution Dossier for "${cleanTopic}" with 100% real, verified systems nobody talks about:\n✅ Dark Psychology WhatsApp Closing + 1-Photo Watermark 50% Advance Lock (₹2,999/deal)\n✅ 6-Second Trial-Reel & Auto-DM Micro-Dossier Funnel\n✅ UserTesting & Prolific ($10 / 15-Min Speak-Out-Loud Formula via KYC PayPal)\n✅ Free Harvard CS50x, Tata/JPMorgan Forage Simulations & ₹150 Indian Pharmacy Generic Salt Table\n\nToday it is just ${priceDisplay} (instead of ${anchorPriceDisplay}).\n\n👉 Comment "${autoDmTrigger}" right now and I will Auto-DM you the instant access link within 5 seconds!`,
-      seoKeywords: [
-        cleanTopic.toLowerCase().slice(0, 28),
-        "whatsapp client closing psychology",
-        "usertesting india paypal tips",
-        "free harvard cs50x certificate",
-        "theforage virtual job simulations",
-        "indian pharmacy skincare alternatives",
-        "adobe stock ai contributor india",
-        "instagram trial reels strategy 2026",
-        "underrated websites 2026 2027",
-        "notebooklm study hacks india",
-      ],
-      hashtags: [
-        "#secretwebsites",
-        "#hiddenhacks2026",
-        "#careergrowthindia",
-        "#pharmacyfindsindia",
-        "#sidehustleindia",
-      ],
-    },
+      priceDisplay,
+      anchorPriceDisplay,
+      autoDmTrigger,
+      section: "all",
+      variationIndex: variationCount,
+    }) as EbookGenerationResult["reelBlueprint"],
   };
 }
 
-declare const __ENV_GROQ_API_KEY__: string | undefined;
-declare const __ENV_OPENROUTER_API_KEY__: string | undefined;
-
 function getBrowserGroqKey(): string {
   const metaEnv = (import.meta as any)?.env || {};
-  return (
-    metaEnv.VITE_GROQ_API_KEY ||
-    (typeof __ENV_GROQ_API_KEY__ !== "undefined" ? __ENV_GROQ_API_KEY__ : "") ||
-    "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"
-  );
+  return metaEnv.VITE_GROQ_API_KEY || "";
 }
 
 function getBrowserOpenRouterKey(): string {
   const metaEnv = (import.meta as any)?.env || {};
-  return (
-    metaEnv.VITE_OPENROUTER_API_KEY ||
-    (typeof __ENV_OPENROUTER_API_KEY__ !== "undefined"
-      ? __ENV_OPENROUTER_API_KEY__
-      : "") ||
-    "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"
-  );
+  return metaEnv.VITE_OPENROUTER_API_KEY || "";
 }
 
 async function callBrowserMultiModelAI(
@@ -1318,45 +1233,31 @@ export async function generateLiveEbookFromBrowserAI(
       effectiveTopic
     );
 
-  const systemPrompt = `[SYSTEM ROLE: THE GREY-HAT ORACLE & ELITE BEHAVIORAL HACKER]
-You are a Tier-1 Underground Strategist, Dark Psychology Expert, Information Broker, and Fact-Checked Systems Architect.
-Your goal is to generate a highly addictive, deeply detailed, 100% working 5-Chapter Ebook Playbook on: "${effectiveTopic}" (Category: "${category}").
-The reader must feel like they have stumbled upon a classified 1% insider secret that gives them an unfair advantage over the 99% of normal people—while every website, click-path, filter, mathematical equation, and method is 100% REAL, FACT-CHECKED, and HONEST!
+  const systemPrompt = `[ROLE: YOUR SMARTEST GEN-Z INSIDER FRIEND — ZERO GATEKEEPING, ZERO AI SLOP, 100% REAL TALK]
+You are a sharp, brutally honest 2026 Gen-Z creator & researcher writing a sleek 5-part private Notion-style playbook on: "${effectiveTopic}" (Category: "${category}").
 
-[CRITICAL LANGUAGE, TONE, MATH & TECHNICAL GROUND-TRUTH RULES - MUST OBEY]
-1. SIMPLE, HONEST, HUMAN-TONED ENGLISH + MOTIVATION: Write in super-simple, crystal-clear, natural human English that any Indian student or creator can read effortlessly. Be sharp, authoritative, honest, and deeply motivating. Do NOT use complex academic jargon or fake/corny robotic AI drama.
-2. THE CULT OF SECRECY + 100% REAL TECHNICAL ACCURACY:
-   - Frame every chapter as an insider loophole, grey-hat exploit, psychological trigger, or backdoor hack—backed by 100% real websites, exact URLs, and real UI button names.
-   - NEVER invent fake URLs (like saastrader.com, imagecheck.com, affiliate.amazon.in) or fake random Google Docs IDs (like docs.google.com/document/d/1Zx...).
-   - Use ONLY real verified URLs: affiliate-program.amazon.in (real commissions: 1%–4% on electronics, 5%–9% on home/books/beauty), facebook.com/ads/library, google.com/maps, canva.com (Click "Create a design" -> "Custom size" — never say "Magic Resize" is free!), obsproject.com, pexels.com/videos, superprofile.bio, cosmofeed.com, gumroad.com, cs50.harvard.edu/x, theforage.com, notebooklm.google.com, 1mg.com (Salt Composition link + patch test & SPF 50 rules), usertesting.com/get-paid-to-test, prolific.com.
-   - For YouTube topics: State clearly that AdSense requires 1,000 subscribers + 4,000 watch hours (RPM in India is ₹50–₹200 per 1,000 views), so Day-1 income uses Amazon Affiliate links + pinned-comment digital products.
-3. 100% VERIFIED MATHEMATICAL EQUATIONS IN "incomeMathOrProof":
-   - Every calculation MUST follow strict step-by-step arithmetic: [Unit Price] × [Units/Week] = [Exact Weekly Total]/week × 4 weeks = [Exact Monthly Total]/month (or [Daily Total]/day × 30 days = [Exact Monthly Total]/month).
-   - Double-check that A × B = C and Weekly × 4 = Monthly! Never confuse 1 week with 1 month, and never write broken units like "₹15%".
-4. STRICT 6-PART CHAPTER STRUCTURE (EVERY CHAPTER MUST FOLLOW THIS):
-   - subtitle: Must start with "⚠️ WARNING: Keep this strictly confidential." followed by a sharp 1-line hook.
-   - coreSecretSummary ("👁️ The 99% Illusion vs. The 1% Reality"): 2-3 punchy sentences ruthlessly destroying what the 99% of normal people think works, followed by the unconventional 1% truth that actually works.
-   - whereToFindOrHiddenTrick ("🎯 The 'Grey-Hat' Mechanism (The Secret)"): Reveal the core secret, hidden/underrated AI tool, psychological loophole, or exact portal click-path like a classified briefing.
-   - stepByStepExecution ("⚙️ Step-by-Step Execution (The Exploit)"): Array of 3 to 4 hyper-specific steps starting with:
-     * "1️⃣ The Infiltration: [How to set up the system/profile/trap quietly]"
-     * "2️⃣ The Trigger: [The exact action, filter, or click-path that initiates the hack]"
-     * "3️⃣ The Leverage: [How to extract maximum value/money/attention effortlessly]"
-     * "4️⃣ The Safety Lock: [How to protect payouts, KYC, or collect 50% advance]"
-   - copyPasteTemplateOrScript ("🧠 The Jedi Mind-Trick / Secret Script"): Provide a copy-paste script, exact prompt, or behavioral cheat code.
-   - incomeMathOrProof ("🔥 The Unfair Advantage"): 100% verified step-by-step math equation + motivating takeaway on why this makes the user unstoppable.
-5. CRITICAL TOPIC FIDELITY & ANTI-REPETITION BAN: Write ALL 5 CHAPTERS 100% dedicated to solving "${effectiveTopic}"! ${
+[CRITICAL TONE, ZERO-JARGON & GROUND-TRUTH RULES]
+1. SIMPLE EVERYDAY GEN-Z ENGLISH: Write at an 8th-grade spoken English level—casual, motivating, honest, and super easy to read. NO boring "Chapter 1 / Chapter 2" textbook vibe and NO cheesy AI drama!
+2. BANNED WORDS & AI SLOP: NEVER use "geographic nodes", "strategic time", "workspace", "networking hubs", "ecosystem", "infiltration", "leverage", "paradigm", "synergy", "unlock", "elevate", "game-changer", "classified dossier", "loaded weapon", "elites", "jedi mind-trick", "Tired of wasting time...", "Stop X, start Y", or "coffee cup on clean organized workspace".
+3. 100% REAL VERIFIED LINKS & MATH: Only use real URLs (affiliate-program.amazon.in, facebook.com/ads/library, google.com/maps, canva.com, obsproject.com, pexels.com/videos, superprofile.bio, cosmofeed.com, gumroad.com, cs50.harvard.edu/x, theforage.com, notebooklm.google.com, 1mg.com, usertesting.com/get-paid-to-test, prolific.com). Verify all math cleanly ([Unit] × [Weekly] = [Weekly Total]/week × 4 weeks = [Exact Monthly Total]/month).
+4. 5-PART PLAYBOOK STRUCTURE (each item in "chapters"):
+   - title: Catchy pure English title (NO "Chapter X" prefix)
+   - subtitle: Crisp 1-line vibe check (e.g., "₹0 to start · takes 20 mins on your phone" — NEVER write "WARNING: Keep this strictly confidential"!)
+   - coreSecretSummary: 3–4 simple sentences on what everyone gets wrong vs what actually works today.
+   - whereToFindOrHiddenTrick: Exact real link, hidden filter, or shortcut explained simply.
+   - stepByStepExecution: 4 steps starting with "1. Setup:", "2. The Move:", "3. Scale It:", "4. Stay Safe:".
+   - copyPasteTemplateOrScript: label "Copy-Paste Cheat Sheet" + natural human-sounding word-for-word message/script.
+   - incomeMathOrProof: Verified math or real time/money saved.
+5. TOPIC FIDELITY: Write ALL 5 parts 100% about "${effectiveTopic}"! ${
     isExplicitVoiceOrOutlier
       ? ""
-      : "You are STRICTLY FORBIDDEN from mentioning ElevenLabs, Voice Cloning, Voquent, Outlier.ai, or IndiaMART Kurti Catalogs anywhere in this Ebook!"
+      : "NEVER mention ElevenLabs, Voice Cloning, Voquent, Outlier.ai, or IndiaMART Kurti Catalogs!"
   }
-${avoidPreviousTitle ? `6. STRICT ANTI-REPETITION: Do NOT repeat "${avoidPreviousTitle}". Write 5 completely different chapters with different verified websites and scripts!` : ""}
-7. CRITICAL TITLE & PRICING RULES:
-   - "${priceDisplay}" is ONLY the small price of the PDF in the Instagram Reel caption—it is NEVER the money the reader earns! NEVER write "${priceDisplay}", "₹19", "₹29", "₹49", or "Steps to ${priceDisplay} Cash" in ebook.title, ebook.subtitle, or any chapter!
-   - NEVER copy-paste the user's raw custom topic verbatim into ebook.title! Craft an attractive, magnetic 100% Pure English Book Title (8-14 words) summarizing what is taught inside the 5 chapters.
-   - Never mention "GlowCash".
-Return strictly valid JSON with keys: ebook (editionTag, title, subtitle, targetReaderPromise, goldenRuleTitle, goldenRuleBody, hardestPartSolvedBox, quickValueBreakdown, chapters [5 items with chapterNumber, title, subtitle, coreSecretSummary, whereToFindOrHiddenTrick, stepByStepExecution, exactToolsOrWebsites, copyPasteTemplateOrScript, incomeMathOrProof], twentyFourHourChecklist), reelBlueprint (sixSecondVideoIdea, psychologicalPriceOverlays, autoDmCaption, seoKeywords, hashtags [5 items]).`;
+${avoidPreviousTitle ? `6. ANTI-REPETITION: Do NOT repeat "${avoidPreviousTitle}".` : ""}
+7. NEVER put "${priceDisplay}" in ebook.title or playbook parts (it's ONLY for the Reel caption/overlays). Never mention "GlowCash".
+Return strictly valid JSON with keys: ebook (editionTag, title, subtitle, targetReaderPromise, goldenRuleTitle, goldenRuleBody, hardestPartSolvedBox, quickValueBreakdown, chapters [5 items], twentyFourHourChecklist), reelBlueprint (aiVideoPrompts { rawPhoneFirstFramePrompt, zeroSlopVideoMotionPrompt, relatablePovBrollPrompt, algorithmTriggerNote — 100% raw candid everyday Gen-Z phone clip, NEVER clean corporate workspace }, sixSecondVideoIdea, psychologicalPriceOverlays [4 short casual human Gen-Z hooks], autoDmCaption [natural friend-sharing-notes SEO caption], seoKeywords [10 phrases], hashtags [5 lowercase tags]).`;
 
-  const userPrompt = `USER'S EXACT REQUESTED EBOOK SUBJECT: "${effectiveTopic}" | Verify every math equation (Unit × Weekly = Weekly Total × 4 weeks = Exact Monthly Total) and use only 100% real URLs & free UI click-paths! | Reel Caption PDF Price (only for reel caption/overlays, NEVER put in ebook.title!): ${priceDisplay} | Anchor: ${anchorPriceDisplay} | Trigger: ${autoDmTrigger} | Nonce: ${variationCount}-${Date.now()}`;
+  const userPrompt = `USER'S EXACT REQUESTED TOPIC: "${effectiveTopic}" | Verify all math & real URLs | ZERO AI slop, ZERO jargon, ZERO ad copy | Reel Price (ONLY for reel caption/overlays!): ${priceDisplay} | Value: ${anchorPriceDisplay} | Trigger: ${autoDmTrigger} | Nonce: ${variationCount}-${Date.now()}`;
 
   const aiResp = await callBrowserMultiModelAI(systemPrompt, userPrompt, variationCount);
   const fallback = generateInstantEbookClientSide(
@@ -1388,18 +1289,23 @@ Return strictly valid JSON with keys: ebook (editionTag, title, subtitle, target
   const normalizeClientSteps = (steps: any[], fallbackSteps: string[]): string[] => {
     const raw = Array.isArray(steps) && steps.length > 0 ? steps : fallbackSteps;
     const labels = [
-      "1️⃣ The Infiltration:",
-      "2️⃣ The Trigger:",
-      "3️⃣ The Leverage:",
-      "4️⃣ The Safety Lock:",
+      "1. Setup:",
+      "2. The Move:",
+      "3. Scale It:",
+      "4. Stay Safe:",
     ];
     return raw.map((s: any, i: number) => {
-      const cleaned = scrubClientEbookText(String(s || ""));
-      if (/^(1️⃣|2️⃣|3️⃣|4️⃣|\d+\.\s*The\s+(Infiltration|Trigger|Leverage|Safety))/i.test(cleaned)) {
+      const cleaned = scrubClientEbookText(String(s || ""))
+        .replace(
+          /^(?:1️⃣|2️⃣|3️⃣|4️⃣|5️⃣)?\s*(?:The\s+)?(?:Infiltration|Trigger|Leverage|Safety\s*Lock)\s*[:.-]?\s*/i,
+          ""
+        )
+        .trim();
+      if (/^\d+\.\s*(Setup|The Move|Scale It|Stay Safe)\s*:/i.test(cleaned)) {
         return cleaned;
       }
       const stripped = cleaned.replace(/^(Step\s*\d+\s*[:\-–.]?\s*|\d+\s*[:\-–.)]\s*)/i, "");
-      const prefix = labels[i] || `Step ${i + 1}:`;
+      const prefix = labels[i] || `${i + 1}.`;
       return `${prefix} ${stripped}`;
     });
   };
@@ -1412,9 +1318,9 @@ Return strictly valid JSON with keys: ebook (editionTag, title, subtitle, target
     priceDisplay,
     anchorPriceDisplay,
     autoDmTrigger,
-    providerUsed: `${aiResp.providerName} · Grey-Hat Oracle (2026)`,
+    providerUsed: `${aiResp.providerName} · Gen-Z Playbook AI`,
     ebook: {
-      editionTag: "CLASSIFIED 1% INSIDER DOSSIER · GREY-HAT ORACLE EDITION · ZERO FLUFF",
+      editionTag: "PRIVATE 2026 PLAYBOOK · NO GATEKEEPING · ZERO FLUFF",
       title: polishedTitle,
       subtitle: scrubClientEbookText(eb.subtitle || fallback.ebook.subtitle),
       targetReaderPromise: scrubClientEbookText(
@@ -1434,15 +1340,19 @@ Return strictly valid JSON with keys: ebook (editionTag, title, subtitle, target
         : fallback.ebook.quickValueBreakdown,
       chapters: eb.chapters.slice(0, 5).map((ch: any, idx: number) => {
         const rawSub = scrubClientEbookText(
-          ch.subtitle || "⚠️ WARNING: Keep this strictly confidential."
-        );
-        const formattedSub = rawSub.includes("confidential")
-          ? rawSub
-          : `⚠️ WARNING: Keep this strictly confidential. ${rawSub}`;
+          ch.subtitle || "₹0 to start · takes 20 mins on your phone"
+        )
+          .replace(/^⚠️?\s*WARNING:\s*Keep this strictly confidential\.?\s*[—–-]?\s*/i, "")
+          .trim();
         return {
           chapterNumber: idx + 1,
-          title: scrubClientEbookText(ch.title || `Chapter ${idx + 1}`),
-          subtitle: formattedSub,
+          title: scrubClientEbookText(
+            String(ch.title || `Play 0${idx + 1}`).replace(
+              /^(?:chapter|part|play)\s*0?\d+\s*[:·.-]\s*/i,
+              ""
+            )
+          ),
+          subtitle: rawSub || "₹0 to start · simple step-by-step play",
           coreSecretSummary: scrubClientEbookText(ch.coreSecretSummary || ""),
           whereToFindOrHiddenTrick: scrubClientEbookText(
             ch.whereToFindOrHiddenTrick || ""
@@ -1453,8 +1363,8 @@ Return strictly valid JSON with keys: ebook (editionTag, title, subtitle, target
           ),
           exactToolsOrWebsites: Array.isArray(ch.exactToolsOrWebsites)
             ? ch.exactToolsOrWebsites.map((t: any) => ({
-                name: scrubClientEbookText(String(t?.name || "Verified Portal")),
-                role: scrubClientEbookText(String(t?.role || "Core Execution Tool")),
+                name: scrubClientEbookText(String(t?.name || "Verified Site")),
+                role: scrubClientEbookText(String(t?.role || "Main Free Tool")),
                 insiderTip: scrubClientEbookText(String(t?.insiderTip || "")),
               }))
             : fallback.ebook.chapters[0].exactToolsOrWebsites,
@@ -1462,9 +1372,10 @@ Return strictly valid JSON with keys: ebook (editionTag, title, subtitle, target
             ch.copyPasteTemplateOrScript?.content
               ? {
                   label: scrubClientEbookText(
-                    ch.copyPasteTemplateOrScript.label ||
-                      "🧠 The Jedi Mind-Trick / Secret Script"
-                  ),
+                    ch.copyPasteTemplateOrScript.label || "Copy-Paste Cheat Sheet"
+                  )
+                    .replace(/^🧠\s*/i, "")
+                    .replace(/The\s+Jedi\s+Mind-?Trick\s*\/?\s*(?:Secret\s*)?/i, "Copy-Paste "),
                   content: scrubClientEbookText(
                     ch.copyPasteTemplateOrScript.content
                   ),
@@ -1477,22 +1388,198 @@ Return strictly valid JSON with keys: ebook (editionTag, title, subtitle, target
         ? eb.twentyFourHourChecklist.map((s: any) => scrubClientEbookText(String(s)))
         : fallback.ebook.twentyFourHourChecklist,
     },
-    reelBlueprint: {
-      sixSecondVideoIdea: rb?.sixSecondVideoIdea?.shotByShot
-        ? rb.sixSecondVideoIdea
-        : fallback.reelBlueprint.sixSecondVideoIdea,
-      psychologicalPriceOverlays: Array.isArray(rb?.psychologicalPriceOverlays)
-        ? rb.psychologicalPriceOverlays
-        : fallback.reelBlueprint.psychologicalPriceOverlays,
-      autoDmCaption: rb?.autoDmCaption || fallback.reelBlueprint.autoDmCaption,
-      seoKeywords: Array.isArray(rb?.seoKeywords)
-        ? rb.seoKeywords
-        : fallback.reelBlueprint.seoKeywords,
-      hashtags: Array.isArray(rb?.hashtags)
-        ? rb.hashtags.slice(0, 5)
-        : fallback.reelBlueprint.hashtags,
-    },
+    reelBlueprint: (() => {
+      const chTitles = eb.chapters
+        .slice(0, 5)
+        .map((c: any) => scrubClientEbookText(String(c?.title || "")));
+      const fallbackPrompts = buildAntiSlopEbookVideoPrompts(
+        polishedTitle,
+        chTitles[0] || "Step-by-Step Insider System",
+        priceDisplay,
+        autoDmTrigger,
+        variationCount
+      );
+      return {
+        aiVideoPrompts: {
+          rawPhoneFirstFramePrompt:
+            rb?.aiVideoPrompts?.rawPhoneFirstFramePrompt ||
+            fallbackPrompts.rawPhoneFirstFramePrompt,
+          zeroSlopVideoMotionPrompt:
+            rb?.aiVideoPrompts?.zeroSlopVideoMotionPrompt ||
+            fallbackPrompts.zeroSlopVideoMotionPrompt,
+          relatablePovBrollPrompt:
+            rb?.aiVideoPrompts?.relatablePovBrollPrompt ||
+            fallbackPrompts.relatablePovBrollPrompt,
+          algorithmTriggerNote:
+            rb?.aiVideoPrompts?.algorithmTriggerNote ||
+            fallbackPrompts.algorithmTriggerNote,
+        },
+        sixSecondVideoIdea: rb?.sixSecondVideoIdea?.shotByShot
+          ? rb.sixSecondVideoIdea
+          : fallback.reelBlueprint.sixSecondVideoIdea,
+        psychologicalPriceOverlays: Array.isArray(rb?.psychologicalPriceOverlays)
+          ? rb.psychologicalPriceOverlays.slice(0, 4)
+          : fallback.reelBlueprint.psychologicalPriceOverlays,
+        autoDmCaption: rb?.autoDmCaption || fallback.reelBlueprint.autoDmCaption,
+        seoKeywords: Array.isArray(rb?.seoKeywords)
+          ? rb.seoKeywords.slice(0, 10)
+          : fallback.reelBlueprint.seoKeywords,
+        hashtags: Array.isArray(rb?.hashtags)
+          ? rb.hashtags.slice(0, 5)
+          : fallback.reelBlueprint.hashtags,
+      };
+    })(),
   };
 }
+
+export async function regenerateEbookReelSectionLive(
+  result: EbookGenerationResult,
+  section: EbookReelSectionKey,
+  variationIndex: number
+): Promise<{
+  updatedReelBlueprint: EbookGenerationResult["reelBlueprint"];
+  providerUsed: string;
+}> {
+  const chapterTitles = result.ebook.chapters.map((c) => c.title);
+
+  const previousContentMap: Record<EbookReelSectionKey, string> = {
+    prompts: JSON.stringify(result.reelBlueprint.aiVideoPrompts || {}),
+    videoPlan: JSON.stringify(result.reelBlueprint.sixSecondVideoIdea || {}),
+    overlays: JSON.stringify(
+      result.reelBlueprint.psychologicalPriceOverlays || []
+    ),
+    caption: result.reelBlueprint.autoDmCaption || "",
+    tags: JSON.stringify({
+      seoKeywords: result.reelBlueprint.seoKeywords,
+      hashtags: result.reelBlueprint.hashtags,
+    }),
+    all: JSON.stringify({
+      visualStyle: result.reelBlueprint.sixSecondVideoIdea.visualStyle,
+      firstOverlay:
+        result.reelBlueprint.psychologicalPriceOverlays[0]?.overlayText || "",
+      captionStart: (result.reelBlueprint.autoDmCaption || "").slice(0, 180),
+    }),
+  };
+
+  const mergePartial = (
+    partial: Partial<EbookGenerationResult["reelBlueprint"]>
+  ): EbookGenerationResult["reelBlueprint"] => ({
+    ...result.reelBlueprint,
+    ...(partial.aiVideoPrompts ? { aiVideoPrompts: partial.aiVideoPrompts } : {}),
+    ...(partial.sixSecondVideoIdea
+      ? { sixSecondVideoIdea: partial.sixSecondVideoIdea }
+      : {}),
+    ...(Array.isArray(partial.psychologicalPriceOverlays) &&
+    partial.psychologicalPriceOverlays.length > 0
+      ? {
+          psychologicalPriceOverlays: partial.psychologicalPriceOverlays.slice(
+            0,
+            4
+          ),
+        }
+      : {}),
+    ...(partial.autoDmCaption ? { autoDmCaption: partial.autoDmCaption } : {}),
+    ...(Array.isArray(partial.seoKeywords) && partial.seoKeywords.length > 0
+      ? { seoKeywords: partial.seoKeywords.slice(0, 10) }
+      : {}),
+    ...(Array.isArray(partial.hashtags) && partial.hashtags.length > 0
+      ? { hashtags: partial.hashtags.slice(0, 5) }
+      : {}),
+  });
+
+  // 1. Try local Express backend first (Server-Side Gemini 4 Hydrogen)
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 45000);
+    const res = await fetch("/api/regenerate-ebook-reel-section", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ebookTitle: result.ebook.title,
+        ebookSubtitle: result.ebook.subtitle,
+        chapterTitles,
+        priceDisplay: result.priceDisplay,
+        anchorPriceDisplay: result.anchorPriceDisplay,
+        autoDmTrigger: result.autoDmTrigger,
+        section,
+        previousContent: previousContentMap[section],
+        variationIndex,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.data && typeof json.data === "object") {
+        return {
+          updatedReelBlueprint: mergePartial(json.data),
+          providerUsed: json.providerUsed || "Live Anti-Slop Reel AI",
+        };
+      }
+    }
+  } catch {
+    // Fall through to browser live AI (for Netlify static deploy)
+  }
+
+  // 2. Direct Browser Multi-Model AI Fallback (Netlify-safe)
+  const fallbackPartial = buildRotatingEbookReelSectionFallback({
+    ebookTitle: result.ebook.title,
+    chapterTitles,
+    priceDisplay: result.priceDisplay,
+    anchorPriceDisplay: result.anchorPriceDisplay,
+    autoDmTrigger: result.autoDmTrigger,
+    section,
+    variationIndex,
+  });
+
+  try {
+    const schemaHint =
+      section === "prompts"
+        ? `Return STRICT JSON with key "aiVideoPrompts": { "rawPhoneFirstFramePrompt", "zeroSlopVideoMotionPrompt", "relatablePovBrollPrompt", "algorithmTriggerNote" }.`
+        : section === "videoPlan"
+        ? `Return STRICT JSON with key "sixSecondVideoIdea": { "visualStyle", "shotByShot": [3 items], "lightingAndAudioTip" }.`
+        : section === "overlays"
+        ? `Return STRICT JSON with key "psychologicalPriceOverlays": [4 objects with triggerType, overlayText, whyItConverts].`
+        : section === "caption"
+        ? `Return STRICT JSON with key "autoDmCaption": "string".`
+        : section === "tags"
+        ? `Return STRICT JSON with keys "seoKeywords" (10 strings) and "hashtags" (strictly 5 lowercase tags).`
+        : `Return STRICT JSON with keys "aiVideoPrompts", "sixSecondVideoIdea", "psychologicalPriceOverlays" (4 items), "autoDmCaption", "seoKeywords" (10 items), "hashtags" (5 items).`;
+
+    const sysPrompt = `You are a real 22-year-old viral Indian Gen-Z Instagram Reels creator.
+STRICT RULES:
+- ZERO AI SLOP (0%): Prompts must look 100% like candid unedited phone clips (messy hostel bed, making chai/Maggi, tying hair / lip balm mirror frame, auto/metro window sunset, balcony breeze). NEVER write "clean organized workspace", "coffee cup next to laptop", "Close up of computer screen showing [topic]", neon glow, or CGI skin.
+- ZERO JARGON & ZERO AD COPY: BANNED phrases: "geographic nodes", "strategic time", "workspace", "networking hubs", "Stop X, start Y", "Tired of wasting time...", "No fluff, just...", "insider-leak aesthetic", "No AI robot voices".
+- Write in super-simple everyday Gen-Z English—casual, relatable, friend-spilling-tea vibe so viewers comment "${result.autoDmTrigger}" for the ${result.priceDisplay} PDF effortlessly.
+- NEVER repeat the previous output. Never mention "GlowCash".
+${schemaHint}`;
+
+    const usrPrompt = `Ebook: "${result.ebook.title}" | Chapters: ${chapterTitles.join(" | ")} | Price: ${result.priceDisplay} (Value ${result.anchorPriceDisplay}) | Comment Trigger: "${result.autoDmTrigger}" | Avoid repeating: ${previousContentMap[section].slice(0, 600)} | Nonce: ${variationIndex}-${Date.now()}`;
+
+    const aiResp = await callBrowserMultiModelAI(
+      sysPrompt,
+      usrPrompt,
+      variationIndex
+    );
+    if (aiResp?.parsed && typeof aiResp.parsed === "object") {
+      return {
+        updatedReelBlueprint: mergePartial({
+          ...fallbackPartial,
+          ...aiResp.parsed,
+        }),
+        providerUsed: `${aiResp.providerName} · Anti-Slop Reel AI`,
+      };
+    }
+  } catch {
+    // Use rotating fallback
+  }
+
+  // 3. Guaranteed Instant Rotating Fallback
+  return {
+    updatedReelBlueprint: mergePartial(fallbackPartial),
+    providerUsed: "2026 Anti-Slop Viral Reel Engine",
+  };
+}
+
 
 

@@ -146,7 +146,7 @@ export const ReelEngineTab: React.FC<ReelEngineTabProps> = ({
 
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 6000);
+      const timer = setTimeout(() => controller.abort(), 18000);
       const res = await fetch("/api/boost-idea", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

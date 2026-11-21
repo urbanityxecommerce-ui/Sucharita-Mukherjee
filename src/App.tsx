@@ -201,7 +201,7 @@ export default function App() {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 26000);
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
 
       const response = await fetch("/api/generate-reel", {
         method: "POST",
@@ -331,7 +331,7 @@ export default function App() {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 28000);
+      const timeoutId = setTimeout(() => controller.abort(), 65000);
 
       const response = await fetch("/api/generate-ebook", {
         method: "POST",
@@ -703,6 +703,27 @@ export default function App() {
             generationCount={ebookGenCount}
             lastUpdatedMsg={ebookStatusMsg}
             onGenerate={handleGenerateEbook}
+            onUpdateReelBlueprint={(updatedBlueprint) => {
+              setEbookResult((prev) => ({
+                ...prev,
+                reelBlueprint: updatedBlueprint,
+              }));
+              setHistory((prev) =>
+                prev.map((item) =>
+                  item.type === "ebook" &&
+                  item.id === ebookResult.id &&
+                  item.ebookData
+                    ? {
+                        ...item,
+                        ebookData: {
+                          ...item.ebookData,
+                          reelBlueprint: updatedBlueprint,
+                        },
+                      }
+                    : item
+                )
+              );
+            }}
             isSaved={isCurrentEbookSaved}
             onToggleSave={handleToggleSaveCurrentEbook}
           />

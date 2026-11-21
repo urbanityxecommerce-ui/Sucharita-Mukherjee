@@ -18,13 +18,20 @@ import {
   FileText,
   Globe,
   X,
+  Video,
+  Camera,
+  Flame,
+  Search,
 } from "lucide-react";
 import {
   EbookGenerationResult,
+  EbookReelSectionKey,
   HIGH_VALUE_EBOOK_PRESETS,
   EBOOK_CATEGORIES,
   boostUserIdeaOptions,
+  buildAntiSlopEbookVideoPrompts,
 } from "../data/playbookData";
+import { regenerateEbookReelSectionLive } from "../utils/instantClientGenerator";
 import { CopyButton } from "./CopyButton";
 import {
   downloadEbookAsPDF,
@@ -45,6 +52,9 @@ interface EbookGeneratorTabProps {
     isRetry?: boolean,
     category?: string
   ) => void;
+  onUpdateReelBlueprint?: (
+    updatedBlueprint: EbookGenerationResult["reelBlueprint"]
+  ) => void;
   isSaved: boolean;
   onToggleSave: () => void;
 }
@@ -58,6 +68,7 @@ export const EbookGeneratorTab: React.FC<EbookGeneratorTabProps> = ({
   generationCount,
   lastUpdatedMsg,
   onGenerate,
+  onUpdateReelBlueprint,
   isSaved,
   onToggleSave,
 }) => {
@@ -85,6 +96,21 @@ export const EbookGeneratorTab: React.FC<EbookGeneratorTabProps> = ({
     null
   );
   const [showExportModal, setShowExportModal] = useState(false);
+  const [activePromptTab, setActivePromptTab] = useState<
+    "firstFrame" | "videoMotion" | "relatableBroll"
+  >("firstFrame");
+  const [regeneratingSection, setRegeneratingSection] =
+    useState<EbookReelSectionKey | null>(null);
+  const [sectionVariationCounts, setSectionVariationCounts] = useState<
+    Record<EbookReelSectionKey, number>
+  >({
+    all: 1,
+    prompts: 1,
+    videoPlan: 1,
+    overlays: 1,
+    caption: 1,
+    tags: 1,
+  });
 
   // Sync local inputs when result changes (e.g. loaded from History)
   useEffect(() => {
@@ -153,7 +179,7 @@ export const EbookGeneratorTab: React.FC<EbookGeneratorTabProps> = ({
 
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 9000);
+      const timer = setTimeout(() => controller.abort(), 18000);
       const res = await fetch("/api/boost-idea", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -206,8 +232,51 @@ export const EbookGeneratorTab: React.FC<EbookGeneratorTabProps> = ({
     }, 150);
   };
 
-  // Enforce 2026 Instagram 5-Hashtag Limit
+  const handleRegenerateReelSection = async (section: EbookReelSectionKey) => {
+    if (regeneratingSection) return;
+    setRegeneratingSection(section);
+    const nextVariation = (sectionVariationCounts[section] || 1) + 1;
+    setSectionVariationCounts((prev) => ({
+      ...prev,
+      [section]: nextVariation,
+    }));
+
+    try {
+      const { updatedReelBlueprint } = await regenerateEbookReelSectionLive(
+        result,
+        section,
+        nextVariation
+      );
+      if (onUpdateReelBlueprint) {
+        onUpdateReelBlueprint(updatedReelBlueprint);
+      }
+      const labelMap: Record<EbookReelSectionKey, string> = {
+        all: "Full Viral Reel Kit",
+        prompts: "Anti-Slop AI Video & Image Prompts",
+        videoPlan: "6-Second Algorithm Video Plan",
+        overlays: "Psychological Reel Overlay Texts",
+        caption: "Viral SEO Auto-DM Caption",
+        tags: "5 Trending Hashtags & SEO Keywords",
+      };
+      showToast(`✓ Regenerated fresh ${labelMap[section]}!`);
+    } catch {
+      showToast("Could not refresh section right now. Please try again.");
+    } finally {
+      setRegeneratingSection(null);
+    }
+  };
+
+  // Enforce 2026 Instagram 5-Hashtag Limit & guarantee Anti-Slop AI Video Prompts even on older saved history items
   const fiveHashtags = result.reelBlueprint.hashtags.slice(0, 5);
+  const resolvedAiVideoPrompts =
+    result.reelBlueprint.aiVideoPrompts ||
+    buildAntiSlopEbookVideoPrompts(
+      result.ebook.title,
+      result.ebook.chapters[0]?.title || "Step-by-Step Insider System",
+      result.priceDisplay,
+      result.autoDmTrigger,
+      0
+    );
 
   const filteredPresets =
     selectedCategory === "All"
@@ -229,12 +298,12 @@ ${result.ebook.hardestPartSolvedBox.exactWhereToFindMap
   const fullEbookPlainText = `${result.ebook.editionTag}
 TITLE: ${result.ebook.title}
 SUBTITLE: ${result.ebook.subtitle}
-PRICE ANCHOR: ${result.priceDisplay} (Real Value: ${result.anchorPriceDisplay})
+PRICE ANCHOR: ${result.priceDisplay} (Normal Value: ${result.anchorPriceDisplay})
 
 ${result.ebook.goldenRuleTitle}:
 ${result.ebook.goldenRuleBody}
 ${hardestBoxText}
-QUICK-START 4-PILLAR OVERVIEW:
+QUICK OVERVIEW:
 ${result.ebook.quickValueBreakdown
   .map((item, idx) => `${idx + 1}. ${item.metric}: ${item.detail}`)
   .join("\n")}
@@ -242,56 +311,72 @@ ${result.ebook.quickValueBreakdown
 ${result.ebook.chapters
   .map(
     (ch) => `=========================================
-Chapter 0${ch.chapterNumber} · ${ch.title}
-⚠️ WARNING: Keep this strictly confidential.
-${ch.subtitle ? `(${ch.subtitle.replace(/^⚠️\s*WARNING:\s*Keep this strictly confidential\.?\s*/i, "")})` : ""}
+0${ch.chapterNumber} · ${ch.title}
+${ch.subtitle ? `real talk: ${ch.subtitle.replace(/^⚠️?\s*WARNING:\s*Keep this strictly confidential\.?\s*[—–-]?\s*/i, "")}` : ""}
 
-👁️ The 99% Illusion vs. The 1% Reality:
+What Everyone Gets Wrong (vs. What Actually Works):
 ${ch.coreSecretSummary}
 
-🎯 The "Grey-Hat" Mechanism (The Secret):
-${ch.whereToFindOrHiddenTrick || "Use the exact search query and verified click-path below."}
+The Actual Shortcut (Zero Gatekeeping):
+${ch.whereToFindOrHiddenTrick || "Use the exact search filter and link below."}
 
-⚙️ Step-by-Step Execution (The Exploit):
+Do This Step-by-Step:
 ${ch.stepByStepExecution.map((s) => `${s}`).join("\n")}
 
-🌐 Exact Underground Portals & Free Tools:
+Exact Links & Free Tools:
 ${(ch.exactToolsOrWebsites || [])
   .map((t) => `- ${t.name} (${t.role}): ${t.insiderTip}`)
   .join("\n")}
 
-🧠 The Jedi Mind-Trick / Secret Script (${ch.copyPasteTemplateOrScript.label}):
+${ch.copyPasteTemplateOrScript.label}:
 ${ch.copyPasteTemplateOrScript.content}
 
-🔥 The Unfair Advantage:
+Real Numbers & Why This Hits Different:
 ${ch.incomeMathOrProof}
 `
   )
   .join("\n")}
 =========================================
-24-HOUR EXECUTION CHECKLIST:
+24-HOUR ACTION CHECKLIST:
 ${result.ebook.twentyFourHourChecklist.map((c) => `[ ] ${c}`).join("\n")}`;
 
-  const fullTriggerReelPackText = `6-SECOND PSYCHOLOGICAL REEL BLUEPRINT (${result.priceDisplay} EBOOK)
-Visual Concept: ${result.reelBlueprint.sixSecondVideoIdea.visualStyle}
+  const allThreeAntiSlopPromptsText = `1. RAW iPHONE POV FIRST-FRAME IMAGE PROMPT (ChatGPT Image / Midjourney / Ideogram):
+${resolvedAiVideoPrompts.rawPhoneFirstFramePrompt}
+
+2. 6-SECOND ZERO-SLOP AI VIDEO MOTION PROMPT (Kling / Veo / Runway / Flow AI):
+${resolvedAiVideoPrompts.zeroSlopVideoMotionPrompt}
+
+3. RELATABLE LATE-NIGHT / CHAI POV B-ROLL PROMPT:
+${resolvedAiVideoPrompts.relatablePovBrollPrompt}
+
+ALGORITHM & ZERO-SLOP NOTE:
+${resolvedAiVideoPrompts.algorithmTriggerNote}`;
+
+  const fullTriggerReelPackText = `VIRAL EBOOK REEL STUDIO (${result.priceDisplay} PDF — "${result.ebook.title}")
+
+=== 1. ANTI-SLOP AI VIDEO & IMAGE PROMPTS ===
+${allThreeAntiSlopPromptsText}
+
+=== 2. 6-SECOND ALGORITHM VIDEO PLAN ===
+Visual Aesthetic: ${result.reelBlueprint.sixSecondVideoIdea.visualStyle}
 Shot-by-Shot Plan:
 ${result.reelBlueprint.sixSecondVideoIdea.shotByShot
   .map((s, i) => `${i + 1}. ${s}`)
   .join("\n")}
-Lighting & Audio: ${result.reelBlueprint.sixSecondVideoIdea.lightingAndAudioTip}
+Audio & Trial-Reel Tip: ${result.reelBlueprint.sixSecondVideoIdea.lightingAndAudioTip}
 
-3 PSYCHOLOGICAL PRICE-COMPARISON OVERLAYS:
+=== 3. PSYCHOLOGICAL REEL OVERLAY TEXTS ===
 ${result.reelBlueprint.psychologicalPriceOverlays
   .map((o, i) => `${i + 1}. [${o.triggerType}] "${o.overlayText}" (${o.whyItConverts})`)
   .join("\n")}
 
-AUTO-DM CAPTION (Trigger: "${result.autoDmTrigger}"):
+=== 4. VIRAL SEO AUTO-DM CAPTION (Trigger: "${result.autoDmTrigger}") ===
 ${result.reelBlueprint.autoDmCaption}
 
-SEO KEYWORDS:
+=== 5. INSTAGRAM SEARCH SEO KEYWORDS ===
 ${result.reelBlueprint.seoKeywords.join(", ")}
 
-5 HASHTAGS (2026 INSTAGRAM 5-HASHTAG RULE):
+=== 6. 5 TRENDING HASHTAGS (2026 INSTAGRAM LIMIT) ===
 ${fiveHashtags.join(" ")}`;
 
   return (
@@ -711,8 +796,8 @@ ${fiveHashtags.join(" ")}`;
               <Sparkles className="w-4 h-4" />
               <span>
                 {isGenerating
-                  ? "AI Writing Your Classified 5-Chapter Dossier..."
-                  : `Generate ${priceDisplay} Classified Dossier + 6s Reel`}
+                  ? "AI Writing Your 5-Part Gen-Z Playbook..."
+                  : `Generate ${priceDisplay} Gen-Z Playbook + 6s Reel`}
               </span>
             </button>
 
@@ -725,7 +810,7 @@ ${fiveHashtags.join(" ")}`;
               <RefreshCw
                 className={`w-4 h-4 ${isGenerating ? "animate-spin" : ""}`}
               />
-              <span>Regenerate / Fresh 1% Angle</span>
+              <span>Regenerate Fresh Angle</span>
             </button>
 
             <button
@@ -735,7 +820,7 @@ ${fiveHashtags.join(" ")}`;
               className="px-4 py-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 disabled:opacity-60 text-amber-200 font-semibold text-xs border border-amber-500/35 transition-all inline-flex items-center gap-1.5 cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>🎲 Surprise New 1% Topic</span>
+              <span>🎲 Surprise New Topic</span>
             </button>
 
             <div className="ml-auto flex items-center gap-1.5 text-xs text-emerald-300 font-medium">
@@ -749,7 +834,7 @@ ${fiveHashtags.join(" ")}`;
           {/* Quick 1-Click Ebook Presets Filtered by Selected Category */}
           <div className="pt-2 border-t border-pink-500/15">
             <div className="text-[11px] font-semibold text-pink-300/85 mb-1.5">
-              Or Click Any Ready-Made Classified Grey-Hat Oracle Blueprint ({selectedCategory === "All" ? "All Categories" : selectedCategory}):
+              Or Click Any Ready-Made 2026 Playbook Topic ({selectedCategory === "All" ? "All Categories" : selectedCategory}):
             </div>
             <div className="flex flex-wrap gap-1.5">
               {filteredPresets.map((preset) => (
@@ -791,10 +876,10 @@ ${fiveHashtags.join(" ")}`;
             <RefreshCw className="w-6 h-6 text-pink-400 animate-spin" />
           </div>
           <h3 className="text-lg font-bold text-white">
-            AI is Writing Your Zero-Fluff 5-Chapter {priceDisplay} Ebook & Mastermind Filter Map...
+            AI is Writing Your 5-Part Gen-Z {priceDisplay} Playbook & Zero-Slop Reel...
           </h3>
           <p className="text-xs text-pink-200/80 max-w-md mx-auto">
-            Building exact search bar queries, direct portals, client/buyer filters, copy-paste scripts, and white-label 12pt layout...
+            Writing simple human English plays, real links, copy-paste scripts, and trendy 0% AI-slop Reel hooks...
           </p>
         </div>
       )}
@@ -821,10 +906,10 @@ ${fiveHashtags.join(" ")}`;
           </span>
           <div>
             <div className="text-xs md:text-sm font-bold">
-              Step 1: Read & Download White-Label 12pt Ebook
+              Step 1: Read & Download Gen-Z Playbook PDF
             </div>
             <div className="text-[11px] opacity-80">
-              Hardest-Part Solved Map + 5 Chapters + Direct PDF Download
+              Link Map + 5 Modern Plays (No Boring Chapters) + Direct PDF
             </div>
           </div>
         </button>
@@ -849,10 +934,10 @@ ${fiveHashtags.join(" ")}`;
           </span>
           <div>
             <div className="text-xs md:text-sm font-bold">
-              Step 2: 6-Second Trigger Reel & 5 Hashtags
+              Step 2: Viral Ebook Reel Studio & Anti-Slop Video Prompts
             </div>
             <div className="text-[11px] opacity-80">
-              3 FOMO/Snack Price Hooks + Auto-DM Caption + 2026 5 Hashtags
+              0% AI-Slop Prompts + Psychological Overlays + SEO Caption + Tags
             </div>
           </div>
         </button>
@@ -909,7 +994,7 @@ ${fiveHashtags.join(" ")}`;
               </div>
             </div>
 
-            {/* Chapter Tabs so user can focus on 1 chapter at a time if desired */}
+            {/* Playbook Part Tabs (Modern Gen-Z Notion Style — No Boring "Chapter 1 / Chapter 2") */}
             <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
@@ -920,7 +1005,7 @@ ${fiveHashtags.join(" ")}`;
                     : "bg-[#0D0816] text-pink-200/80 hover:bg-white/10"
                 }`}
               >
-                All Chapters (Full View)
+                Full Playbook
               </button>
               <button
                 type="button"
@@ -931,7 +1016,7 @@ ${fiveHashtags.join(" ")}`;
                     : "bg-[#0D0816] text-pink-200/80 hover:bg-white/10"
                 }`}
               >
-                Cover & Mastermind Map
+                Cover & Link Map
               </button>
               {result.ebook.chapters.map((ch, idx) => (
                 <button
@@ -946,7 +1031,7 @@ ${fiveHashtags.join(" ")}`;
                       : "bg-[#0D0816] text-pink-200/80 hover:bg-white/10"
                   }`}
                 >
-                  Chapter {ch.chapterNumber || idx + 1}
+                  Play 0{ch.chapterNumber || idx + 1}
                 </button>
               ))}
               <button
@@ -1131,7 +1216,7 @@ ${fiveHashtags.join(" ")}`;
               </>
             )}
 
-            {/* 5 Simple-English Classified Grey-Hat Oracle Chapters */}
+            {/* 5 Modern Gen-Z Playbook Cards (Zero Boring "Chapter 1 / Chapter 2" Vibe) */}
             <div className="space-y-8">
               {result.ebook.chapters.map((chapter, idx) => {
                 if (
@@ -1141,9 +1226,14 @@ ${fiveHashtags.join(" ")}`;
                   return null;
                 }
                 const cleanSubtitleNote = (chapter.subtitle || "")
-                  .replace(/^⚠️\s*WARNING:\s*Keep this strictly confidential\.?\s*/i, "")
+                  .replace(/^⚠️?\s*WARNING:\s*Keep this strictly confidential\.?\s*[—–-]?\s*/i, "")
                   .trim();
-                const chapterCopyText = `Chapter 0${chapter.chapterNumber || idx + 1} · ${chapter.title}\n⚠️ WARNING: Keep this strictly confidential.\n${cleanSubtitleNote ? `${cleanSubtitleNote}\n` : ""}\n👁️ The 99% Illusion vs. The 1% Reality:\n${chapter.coreSecretSummary}\n\n🎯 The "Grey-Hat" Mechanism (The Secret):\n${chapter.whereToFindOrHiddenTrick || ""}\n\n⚙️ Step-by-Step Execution (The Exploit):\n${chapter.stepByStepExecution.join("\n")}\n\n🌐 Exact Underground Portals & Free Tools:\n${(chapter.exactToolsOrWebsites || []).map((t) => `- ${t.name} (${t.role}): ${t.insiderTip}`).join("\n")}\n\n🧠 The Jedi Mind-Trick / Secret Script (${chapter.copyPasteTemplateOrScript.label}):\n${chapter.copyPasteTemplateOrScript.content}\n\n🔥 The Unfair Advantage:\n${chapter.incomeMathOrProof}`;
+                const cleanScriptLabel = (
+                  chapter.copyPasteTemplateOrScript.label || "Copy-Paste Cheat Sheet"
+                )
+                  .replace(/^🧠\s*/i, "")
+                  .replace(/The\s+Jedi\s+Mind-?Trick\s*\/?\s*(?:Secret\s*)?/i, "Copy-Paste ");
+                const chapterCopyText = `0${chapter.chapterNumber || idx + 1} · ${chapter.title}\n${cleanSubtitleNote ? `real talk: ${cleanSubtitleNote}\n` : ""}\nWhat Everyone Gets Wrong (vs. What Actually Works):\n${chapter.coreSecretSummary}\n\nThe Actual Shortcut (Zero Gatekeeping):\n${chapter.whereToFindOrHiddenTrick || ""}\n\nDo This Step-by-Step:\n${chapter.stepByStepExecution.join("\n")}\n\nExact Links & Free Tools:\n${(chapter.exactToolsOrWebsites || []).map((t) => `- ${t.name} (${t.role}): ${t.insiderTip}`).join("\n")}\n\n${cleanScriptLabel}:\n${chapter.copyPasteTemplateOrScript.content}\n\nReal Numbers & Why This Hits Different:\n${chapter.incomeMathOrProof}`;
 
                 return (
                   <section
@@ -1156,12 +1246,12 @@ ${fiveHashtags.join(" ")}`;
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
                       <span className="text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md bg-pink-500/15 border border-pink-500/30 text-pink-400">
-                        Chapter 0{chapter.chapterNumber || idx + 1} · Classified 1% Dossier
+                        PLAY 0{chapter.chapterNumber || idx + 1} · PRIVATE NOTES
                       </span>
                       <div className="no-print">
                         <CopyButton
                           text={chapterCopyText}
-                          label={`Copy Ch ${chapter.chapterNumber || idx + 1}`}
+                          label={`Copy Play 0${chapter.chapterNumber || idx + 1}`}
                         />
                       </div>
                     </div>
@@ -1173,28 +1263,26 @@ ${fiveHashtags.join(" ")}`;
                           : "text-[#180920]"
                       }`}
                     >
-                      Chapter 0{chapter.chapterNumber || idx + 1} · {chapter.title}
+                      0{chapter.chapterNumber || idx + 1} · {chapter.title}
                     </h3>
 
-                    {/* ⚠️ WARNING: Keep this strictly confidential */}
-                    <div
-                      className={`text-xs font-bold px-3.5 py-2.5 rounded-xl border mb-4 flex flex-col gap-1 ${
-                        ebookThemeMode === "dark"
-                          ? "bg-amber-950/40 text-amber-200 border-amber-500/40"
-                          : "bg-amber-50 text-amber-950 border-amber-300"
-                      }`}
-                    >
-                      <div className="uppercase tracking-wider text-amber-400 font-extrabold">
-                        ⚠️ WARNING: Keep this strictly confidential.
+                    {/* Real Talk Quick Vibe Check Strip */}
+                    {cleanSubtitleNote && (
+                      <div
+                        className={`text-xs font-medium px-3.5 py-2.5 rounded-xl border mb-4 flex items-center gap-2 ${
+                          ebookThemeMode === "dark"
+                            ? "bg-amber-950/35 text-amber-100 border-amber-500/35"
+                            : "bg-amber-50 text-amber-950 border-amber-300"
+                        }`}
+                      >
+                        <span className="uppercase tracking-wider text-amber-400 font-extrabold shrink-0">
+                          real talk:
+                        </span>
+                        <span>{cleanSubtitleNote}</span>
                       </div>
-                      {cleanSubtitleNote && (
-                        <div className="font-medium opacity-95">
-                          💡 {cleanSubtitleNote}
-                        </div>
-                      )}
-                    </div>
+                    )}
 
-                    {/* 👁️ The 99% Illusion vs. The 1% Reality */}
+                    {/* What Everyone Gets Wrong vs What Actually Works */}
                     <div
                       className={`p-4 rounded-xl border mb-4 ${
                         ebookThemeMode === "dark"
@@ -1203,14 +1291,14 @@ ${fiveHashtags.join(" ")}`;
                       }`}
                     >
                       <div className="text-xs font-extrabold uppercase tracking-wider text-purple-300 mb-1.5">
-                        👁️ The 99% Illusion vs. The 1% Reality:
+                        What Everyone Gets Wrong (vs. What Actually Works)
                       </div>
                       <p className="ebook-12pt-body leading-relaxed">
                         {chapter.coreSecretSummary}
                       </p>
                     </div>
 
-                    {/* 🎯 The "Grey-Hat" Mechanism (The Secret) */}
+                    {/* The Actual Shortcut */}
                     {chapter.whereToFindOrHiddenTrick && (
                       <div
                         className={`p-4 rounded-xl border mb-4 ${
@@ -1220,7 +1308,7 @@ ${fiveHashtags.join(" ")}`;
                         }`}
                       >
                         <div className="text-xs font-extrabold uppercase tracking-wider text-pink-400 mb-1.5">
-                          🎯 The &ldquo;Grey-Hat&rdquo; Mechanism (The Secret):
+                          The Actual Shortcut (Zero Gatekeeping)
                         </div>
                         <p className="ebook-12pt-body font-medium leading-relaxed">
                           {chapter.whereToFindOrHiddenTrick}
@@ -1228,10 +1316,10 @@ ${fiveHashtags.join(" ")}`;
                       </div>
                     )}
 
-                    {/* ⚙️ Step-by-Step Execution (The Exploit) */}
+                    {/* Do This Step-by-Step */}
                     <div className="mb-4">
                       <div className="text-xs font-extrabold uppercase tracking-wider text-pink-400 mb-2.5">
-                        ⚙️ Step-by-Step Execution (The Exploit):
+                        Do This Step-by-Step
                       </div>
                       <ol className="space-y-2.5">
                         {chapter.stepByStepExecution.map((step, sIdx) => (
@@ -1252,13 +1340,13 @@ ${fiveHashtags.join(" ")}`;
                       </ol>
                     </div>
 
-                    {/* 🌐 Exact Underground Portals & Free Tools */}
+                    {/* Exact Links & Free Tools */}
                     {Array.isArray(chapter.exactToolsOrWebsites) &&
                       chapter.exactToolsOrWebsites.length > 0 && (
                         <div className="mb-4">
                           <div className="text-xs font-extrabold uppercase tracking-wider text-pink-400 mb-2 flex items-center gap-1.5">
                             <Globe className="w-3.5 h-3.5" />
-                            <span>Exact Underground Portals & Free Tools:</span>
+                            <span>Exact Links & Free Tools</span>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             {chapter.exactToolsOrWebsites.map((tool, tIdx) => (
@@ -1277,7 +1365,7 @@ ${fiveHashtags.join(" ")}`;
                                   </span>
                                 </div>
                                 <div className="mt-1 opacity-90">
-                                  Insider Tip: {tool.insiderTip}
+                                  Quick Tip: {tool.insiderTip}
                                 </div>
                               </div>
                             ))}
@@ -1285,7 +1373,7 @@ ${fiveHashtags.join(" ")}`;
                         </div>
                       )}
 
-                    {/* 🧠 The Jedi Mind-Trick / Secret Script */}
+                    {/* Copy-Paste Script / Cheat Sheet */}
                     <div
                       className={`p-4 rounded-xl border mb-4 ${
                         ebookThemeMode === "dark"
@@ -1295,10 +1383,7 @@ ${fiveHashtags.join(" ")}`;
                     >
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <span className="text-xs font-extrabold uppercase tracking-wider text-pink-400">
-                          {chapter.copyPasteTemplateOrScript.label.startsWith("🧠")
-                            ? chapter.copyPasteTemplateOrScript.label
-                            : `🧠 The Jedi Mind-Trick / Secret Script (${chapter.copyPasteTemplateOrScript.label})`}
-                          :
+                          {cleanScriptLabel}
                         </span>
                         <div className="no-print">
                           <CopyButton
@@ -1318,7 +1403,7 @@ ${fiveHashtags.join(" ")}`;
                       </pre>
                     </div>
 
-                    {/* 🔥 The Unfair Advantage */}
+                    {/* Real Numbers & Why This Hits Different */}
                     <div
                       className={`p-3.5 rounded-xl border flex items-start gap-2.5 text-xs font-semibold ${
                         ebookThemeMode === "dark"
@@ -1329,7 +1414,7 @@ ${fiveHashtags.join(" ")}`;
                       <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
                       <div>
                         <span className="font-extrabold uppercase tracking-wider text-emerald-400 mr-1.5">
-                          🔥 The Unfair Advantage:
+                          Real Numbers & Takeaway:
                         </span>
                         <span>{chapter.incomeMathOrProof}</span>
                       </div>
@@ -1393,7 +1478,7 @@ ${fiveHashtags.join(" ")}`;
               onClick={() => setActiveStep(2)}
               className="px-5 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
             >
-              <span>Next: Step 2 (6-Second Trigger Reel & 5 Hashtags)</span>
+              <span>Next: Step 2 (Anti-Slop AI Video Prompts, Overlays & Tags)</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -1401,76 +1486,295 @@ ${fiveHashtags.join(" ")}`;
       )}
 
       {/* ===================================================================
-          STEP 2: 6-SECOND PSYCHOLOGICAL TRIGGER REEL BLUEPRINT (2026 RULES)
+          STEP 2: VIRAL EBOOK REEL STUDIO & ANTI-SLOP AI VIDEO PROMPTS
       =================================================================== */}
       {activeStep === 2 && (
-        <div className="p-6 rounded-2xl bg-[#160F24] border border-pink-500/30 space-y-6 no-print">
-          <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-pink-500/15">
+        <div className="p-5 md:p-6 rounded-2xl bg-[#160F24] border border-pink-500/30 space-y-6 no-print">
+          {/* Clean Studio Header with Full-Kit Regenerate + Copy */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-pink-500/15">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-pink-400">
-                STEP 2 OF 2 · 6-SECOND PSYCHOLOGICAL REEL BLUEPRINT (2026
-                EDITION)
+                STEP 2 OF 2 · VIRAL EBOOK REEL STUDIO (0% AI SLOP · 2026 ALGORITHM)
               </span>
               <h2 className="text-xl font-bold text-white font-editorial mt-0.5">
-                Sell Your {result.priceDisplay} Ebook on Autopilot
+                Trigger Impulse PDF Requests for Your {result.priceDisplay} Ebook
               </h2>
+              <p className="text-xs text-pink-200/75 mt-1">
+                Don&apos;t like any prompt, overlay, caption, or tag? Click the{" "}
+                <strong className="text-pink-200">Regenerate</strong> button beside that section to refresh only that part instantly.
+              </p>
             </div>
-            <CopyButton
-              text={fullTriggerReelPackText}
-              label="Copy Full Reel Kit"
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={regeneratingSection !== null}
+                onClick={() => handleRegenerateReelSection("all")}
+                className="px-3.5 py-2 rounded-xl bg-[#24163D] hover:bg-[#311E54] border border-pink-500/35 text-pink-100 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 text-pink-400 ${
+                    regeneratingSection === "all" ? "animate-spin" : ""
+                  }`}
+                />
+                <span>
+                  {regeneratingSection === "all"
+                    ? "Refreshing Full Kit..."
+                    : "Regenerate Full Reel Kit"}
+                </span>
+              </button>
+              <CopyButton
+                text={fullTriggerReelPackText}
+                label="Copy Full Reel Kit"
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* 6-Second Video Idea & Shot Timeline */}
-            <div className="p-4 rounded-xl bg-[#0D0816] border border-pink-500/20 space-y-3">
-              <div className="flex items-center justify-between">
+          {/* ===============================================================
+              BLOCK 1: ANTI-SLOP AI VIDEO & FIRST-FRAME PROMPTS (0% AI LOOK)
+          =============================================================== */}
+          <section className="p-5 rounded-2xl bg-[#0D0816] border border-pink-500/25 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-pink-300 flex items-center gap-1.5">
-                  <Film className="w-3.5 h-3.5 text-pink-400" />
-                  <span>Exact 6-Second Video Plan</span>
+                  <Video className="w-4 h-4 text-pink-400" />
+                  <span>
+                    1. Zero-Slop AI Video & First-Frame Prompts (100% Real iPhone POV)
+                  </span>
                 </span>
+                <p className="text-[11px] text-pink-200/70 mt-0.5">
+                  Engineered for Kling, Veo, Runway, Flow AI &amp; ChatGPT Image — zero glossy plastic CGI, zero fake neon slop.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={regeneratingSection !== null}
+                  onClick={() => handleRegenerateReelSection("prompts")}
+                  className="px-3 py-1.5 rounded-lg bg-[#1F1435] hover:bg-[#2C1C4B] border border-pink-500/30 text-pink-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60"
+                >
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 text-pink-400 ${
+                      regeneratingSection === "prompts" ||
+                      regeneratingSection === "all"
+                        ? "animate-spin"
+                        : ""
+                    }`}
+                  />
+                  <span>
+                    {regeneratingSection === "prompts"
+                      ? "Regenerating..."
+                      : "Regenerate"}
+                  </span>
+                </button>
                 <CopyButton
-                  text={`${result.reelBlueprint.sixSecondVideoIdea.visualStyle}\n${result.reelBlueprint.sixSecondVideoIdea.shotByShot.join("\n")}\n${result.reelBlueprint.sixSecondVideoIdea.lightingAndAudioTip}`}
-                  label="Copy Plan"
+                  text={allThreeAntiSlopPromptsText}
+                  label="Copy All 3"
                 />
               </div>
+            </div>
 
-              <p className="text-sm text-white font-medium leading-relaxed">
+            {/* Clean 3-Tab Switcher so prompts stay airy & readable */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setActivePromptTab("firstFrame")}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+                  activePromptTab === "firstFrame"
+                    ? "bg-pink-600 text-white shadow-sm"
+                    : "bg-[#160F24] text-pink-200/80 hover:bg-[#211636] border border-pink-500/20"
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>1. Raw iPhone First-Frame (Image)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActivePromptTab("videoMotion")}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+                  activePromptTab === "videoMotion"
+                    ? "bg-pink-600 text-white shadow-sm"
+                    : "bg-[#160F24] text-pink-200/80 hover:bg-[#211636] border border-pink-500/20"
+                }`}
+              >
+                <Film className="w-3.5 h-3.5" />
+                <span>2. 6s Handheld Motion (AI Video)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActivePromptTab("relatableBroll")}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+                  activePromptTab === "relatableBroll"
+                    ? "bg-pink-600 text-white shadow-sm"
+                    : "bg-[#160F24] text-pink-200/80 hover:bg-[#211636] border border-pink-500/20"
+                }`}
+              >
+                <Flame className="w-3.5 h-3.5" />
+                <span>3. Relatable POV B-Roll Clip</span>
+              </button>
+            </div>
+
+            {/* Active Prompt Display Card */}
+            {activePromptTab === "firstFrame" && (
+              <div className="p-4 rounded-xl bg-[#160F24] border border-pink-500/20 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-pink-300">
+                    ChatGPT Image / Midjourney / Ideogram · 9:16 Candid First-Frame Prompt
+                  </span>
+                  <CopyButton
+                    text={resolvedAiVideoPrompts.rawPhoneFirstFramePrompt}
+                    label="Copy Image Prompt"
+                  />
+                </div>
+                <p className="text-xs md:text-sm text-pink-50/95 leading-relaxed whitespace-pre-wrap">
+                  {resolvedAiVideoPrompts.rawPhoneFirstFramePrompt}
+                </p>
+              </div>
+            )}
+
+            {activePromptTab === "videoMotion" && (
+              <div className="p-4 rounded-xl bg-[#160F24] border border-pink-500/20 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-pink-300">
+                    Kling / Veo / Runway / Flow AI · 6-Second Zero-Slop Video Motion Prompt
+                  </span>
+                  <CopyButton
+                    text={resolvedAiVideoPrompts.zeroSlopVideoMotionPrompt}
+                    label="Copy Video Prompt"
+                  />
+                </div>
+                <p className="text-xs md:text-sm text-pink-50/95 leading-relaxed whitespace-pre-wrap">
+                  {resolvedAiVideoPrompts.zeroSlopVideoMotionPrompt}
+                </p>
+              </div>
+            )}
+
+            {activePromptTab === "relatableBroll" && (
+              <div className="p-4 rounded-xl bg-[#160F24] border border-pink-500/20 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-pink-300">
+                    Emotional / Relatable Indian Creator POV B-Roll Prompt (Stops Scroll)
+                  </span>
+                  <CopyButton
+                    text={resolvedAiVideoPrompts.relatablePovBrollPrompt}
+                    label="Copy B-Roll Prompt"
+                  />
+                </div>
+                <p className="text-xs md:text-sm text-pink-50/95 leading-relaxed whitespace-pre-wrap">
+                  {resolvedAiVideoPrompts.relatablePovBrollPrompt}
+                </p>
+              </div>
+            )}
+
+            {/* Concise Algorithm & Anti-Slop Psychology Note */}
+            <div className="p-3.5 rounded-xl bg-emerald-950/35 border border-emerald-500/25 text-xs text-emerald-100/90 leading-relaxed">
+              <strong className="text-emerald-300">
+                2026 Algorithm &amp; Zero-Slop Edge:{" "}
+              </strong>
+              {resolvedAiVideoPrompts.algorithmTriggerNote}
+            </div>
+          </section>
+
+          {/* ===============================================================
+              BLOCK 2 & 3: 6s ALGORITHM VIDEO PLAN + 4 PSYCHOLOGICAL OVERLAYS
+          =============================================================== */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* 6-Second Video Idea & Shot Timeline */}
+            <section className="p-5 rounded-2xl bg-[#0D0816] border border-pink-500/20 space-y-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-pink-300 flex items-center gap-1.5">
+                  <Film className="w-3.5 h-3.5 text-pink-400" />
+                  <span>2. 6-Second Algorithm-Loop Video Plan</span>
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={regeneratingSection !== null}
+                    onClick={() => handleRegenerateReelSection("videoPlan")}
+                    className="px-2.5 py-1.5 rounded-lg bg-[#1F1435] hover:bg-[#2C1C4B] border border-pink-500/30 text-pink-200 text-xs font-semibold inline-flex items-center gap-1 transition-all cursor-pointer disabled:opacity-60"
+                  >
+                    <RefreshCw
+                      className={`w-3 h-3 text-pink-400 ${
+                        regeneratingSection === "videoPlan" ||
+                        regeneratingSection === "all"
+                          ? "animate-spin"
+                          : ""
+                      }`}
+                    />
+                    <span>
+                      {regeneratingSection === "videoPlan"
+                        ? "Refreshing..."
+                        : "Regenerate"}
+                    </span>
+                  </button>
+                  <CopyButton
+                    text={`${result.reelBlueprint.sixSecondVideoIdea.visualStyle}\n${result.reelBlueprint.sixSecondVideoIdea.shotByShot.join("\n")}\n${result.reelBlueprint.sixSecondVideoIdea.lightingAndAudioTip}`}
+                    label="Copy"
+                  />
+                </div>
+              </div>
+
+              <p className="text-sm text-white font-semibold leading-relaxed">
                 {result.reelBlueprint.sixSecondVideoIdea.visualStyle}
               </p>
 
-              <p className="text-xs text-pink-200/75 leading-relaxed">
-                <strong>Lighting & Audio Guide:</strong>{" "}
-                {result.reelBlueprint.sixSecondVideoIdea.lightingAndAudioTip}
-              </p>
-
-              <div className="space-y-2 pt-1">
+              <div className="space-y-2">
                 {result.reelBlueprint.sixSecondVideoIdea.shotByShot.map(
                   (shot, idx) => (
                     <div
                       key={idx}
-                      className="p-2.5 rounded-lg bg-[#160F24] border border-pink-500/15 text-xs text-pink-100"
+                      className="p-3 rounded-xl bg-[#160F24] border border-pink-500/15 text-xs text-pink-100 leading-relaxed"
                     >
                       {shot}
                     </div>
                   )
                 )}
               </div>
-            </div>
 
-            {/* 3 Psychological Snack Price-Comparison Text Overlays */}
-            <div className="p-4 rounded-xl bg-[#0D0816] border border-pink-500/20 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-pink-300">
-                  3 Psychological Price-Comparison Hooks ({result.priceDisplay}{" "}
-                  vs Snacks)
+              <div className="p-3 rounded-xl bg-[#160F24]/70 border border-pink-500/15 text-xs text-pink-200/85 leading-relaxed">
+                <strong className="text-pink-300">
+                  Audio, Lighting &amp; Trial-Reel Tip:{" "}
+                </strong>
+                {result.reelBlueprint.sixSecondVideoIdea.lightingAndAudioTip}
+              </div>
+            </section>
+
+            {/* 4 Psychological Non-Commercial Reel Overlay Texts */}
+            <section className="p-5 rounded-2xl bg-[#0D0816] border border-pink-500/20 space-y-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-pink-300 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+                  <span>
+                    3. Psychological Reel Overlay Texts ({result.priceDisplay})
+                  </span>
                 </span>
-                <CopyButton
-                  text={result.reelBlueprint.psychologicalPriceOverlays
-                    .map((o) => o.overlayText)
-                    .join("\n\n")}
-                  label="Copy All 3"
-                />
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={regeneratingSection !== null}
+                    onClick={() => handleRegenerateReelSection("overlays")}
+                    className="px-2.5 py-1.5 rounded-lg bg-[#1F1435] hover:bg-[#2C1C4B] border border-pink-500/30 text-pink-200 text-xs font-semibold inline-flex items-center gap-1 transition-all cursor-pointer disabled:opacity-60"
+                  >
+                    <RefreshCw
+                      className={`w-3 h-3 text-pink-400 ${
+                        regeneratingSection === "overlays" ||
+                        regeneratingSection === "all"
+                          ? "animate-spin"
+                          : ""
+                      }`}
+                    />
+                    <span>
+                      {regeneratingSection === "overlays"
+                        ? "Refreshing..."
+                        : "Regenerate"}
+                    </span>
+                  </button>
+                  <CopyButton
+                    text={result.reelBlueprint.psychologicalPriceOverlays
+                      .map((o) => o.overlayText)
+                      .join("\n\n")}
+                    label="Copy All"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2.5">
@@ -1478,15 +1782,17 @@ ${fiveHashtags.join(" ")}`;
                   (overlay, idx) => (
                     <div
                       key={idx}
-                      className="p-3.5 rounded-xl bg-[#160F24] border border-pink-500/25 flex items-start justify-between gap-2"
+                      className="p-3.5 rounded-xl bg-[#160F24] border border-pink-500/20 flex items-start justify-between gap-3"
                     >
                       <div className="text-xs text-white leading-relaxed space-y-1">
                         <div className="text-[11px] font-bold text-pink-400">
-                          Hook #{idx + 1} · {overlay.triggerType}
+                          {overlay.triggerType}
                         </div>
-                        <div>"{overlay.overlayText}"</div>
+                        <div className="text-pink-50 font-medium">
+                          &ldquo;{overlay.overlayText}&rdquo;
+                        </div>
                         <div className="text-[11px] text-pink-200/70">
-                          Why it works: {overlay.whyItConverts}
+                          Why it triggers PDF requests: {overlay.whyItConverts}
                         </div>
                       </div>
                       <CopyButton text={overlay.overlayText} label="Copy" />
@@ -1494,52 +1800,105 @@ ${fiveHashtags.join(" ")}`;
                   )
                 )}
               </div>
-            </div>
+            </section>
           </div>
 
-          {/* Viral Caption + 2026 5-Hashtag Pack */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-[#0D0816] border border-pink-500/20">
-              <div className="flex items-center justify-between mb-2">
+          {/* ===============================================================
+              BLOCK 4 & 5: VIRAL SEO CAPTION + 5 TRENDING HASHTAGS & SEO
+          =============================================================== */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Viral SEO-Optimized Human Auto-DM Caption */}
+            <section className="p-5 rounded-2xl bg-[#0D0816] border border-pink-500/20 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-pink-300 flex items-center gap-1.5">
                   <MessageSquare className="w-3.5 h-3.5 text-pink-400" />
                   <span>
-                    Viral Auto-DM Caption (Trigger: "{result.autoDmTrigger}")
+                    4. Viral SEO Auto-DM Caption (Trigger: &ldquo;
+                    {result.autoDmTrigger}&rdquo;)
                   </span>
                 </span>
-                <CopyButton
-                  text={result.reelBlueprint.autoDmCaption}
-                  label="Copy Caption"
-                />
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={regeneratingSection !== null}
+                    onClick={() => handleRegenerateReelSection("caption")}
+                    className="px-2.5 py-1.5 rounded-lg bg-[#1F1435] hover:bg-[#2C1C4B] border border-pink-500/30 text-pink-200 text-xs font-semibold inline-flex items-center gap-1 transition-all cursor-pointer disabled:opacity-60"
+                  >
+                    <RefreshCw
+                      className={`w-3 h-3 text-pink-400 ${
+                        regeneratingSection === "caption" ||
+                        regeneratingSection === "all"
+                          ? "animate-spin"
+                          : ""
+                      }`}
+                    />
+                    <span>
+                      {regeneratingSection === "caption"
+                        ? "Refreshing..."
+                        : "Regenerate"}
+                    </span>
+                  </button>
+                  <CopyButton
+                    text={result.reelBlueprint.autoDmCaption}
+                    label="Copy Caption"
+                  />
+                </div>
               </div>
-              <pre className="text-xs text-pink-100/90 whitespace-pre-wrap font-sans leading-relaxed bg-[#160F24] p-3.5 rounded-xl border border-pink-500/15">
+              <pre className="text-xs md:text-[13px] text-pink-50/95 whitespace-pre-wrap font-sans leading-relaxed bg-[#160F24] p-4 rounded-xl border border-pink-500/15">
                 {result.reelBlueprint.autoDmCaption}
               </pre>
-            </div>
+            </section>
 
-            <div className="space-y-4">
+            {/* 5 Trending Hashtags (2026 Limit) + 10 High-Intent Search SEO Keywords */}
+            <section className="p-5 rounded-2xl bg-[#0D0816] border border-pink-500/20 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-pink-500/15">
+                <span className="text-xs font-bold uppercase tracking-wider text-pink-300 flex items-center gap-1.5">
+                  <Hash className="w-3.5 h-3.5 text-pink-400" />
+                  <span>5. Trending Hashtags &amp; Instagram SEO Keywords</span>
+                </span>
+                <button
+                  type="button"
+                  disabled={regeneratingSection !== null}
+                  onClick={() => handleRegenerateReelSection("tags")}
+                  className="px-2.5 py-1.5 rounded-lg bg-[#1F1435] hover:bg-[#2C1C4B] border border-pink-500/30 text-pink-200 text-xs font-semibold inline-flex items-center gap-1 transition-all cursor-pointer disabled:opacity-60"
+                >
+                  <RefreshCw
+                    className={`w-3 h-3 text-pink-400 ${
+                      regeneratingSection === "tags" ||
+                      regeneratingSection === "all"
+                        ? "animate-spin"
+                        : ""
+                    }`}
+                  />
+                  <span>
+                    {regeneratingSection === "tags"
+                      ? "Refreshing..."
+                      : "Regenerate Tags & SEO"}
+                  </span>
+                </button>
+              </div>
+
               {/* Strictly 5 Hashtags per 2026 Rule */}
-              <div className="p-4 rounded-xl bg-[#0D0816] border border-pink-500/25">
-                <div className="flex items-center justify-between mb-2">
+              <div className="p-3.5 rounded-xl bg-[#160F24] border border-pink-500/20 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
                   <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-pink-300 flex items-center gap-1.5">
-                      <Hash className="w-3.5 h-3.5 text-pink-400" />
-                      <span>5 Trending Hashtags (2026 Instagram Limit)</span>
+                    <span className="text-xs font-bold text-pink-200">
+                      5 Trending Hashtags (2026 Instagram Limit)
                     </span>
-                    <p className="text-[11px] text-pink-200/70 mt-0.5">
-                      Instagram 2026 rule allows max 5 hyper-targeted hashtags:
+                    <p className="text-[11px] text-pink-200/65">
+                      Max 5 hyper-targeted tags for maximum non-follower discovery:
                     </p>
                   </div>
                   <CopyButton
                     text={fiveHashtags.join(" ")}
-                    label="Copy 5 Hashtags"
+                    label="Copy 5 Tags"
                   />
                 </div>
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2">
                   {fiveHashtags.map((tag, idx) => (
                     <span
                       key={idx}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-pink-500/15 text-pink-200 border border-pink-500/30 font-mono font-bold"
+                      className="text-xs px-3 py-1.5 rounded-lg bg-pink-500/15 text-pink-100 border border-pink-500/30 font-mono font-bold"
                     >
                       {tag}
                     </span>
@@ -1547,11 +1906,12 @@ ${fiveHashtags.join(" ")}`;
                 </div>
               </div>
 
-              {/* SEO Keywords */}
-              <div className="p-4 rounded-xl bg-[#0D0816] border border-pink-500/20">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-pink-300">
-                    Instagram Search SEO Keywords
+              {/* Instagram Search SEO Keywords */}
+              <div className="p-3.5 rounded-xl bg-[#160F24] border border-pink-500/20 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-pink-200 flex items-center gap-1.5">
+                    <Search className="w-3.5 h-3.5 text-pink-400" />
+                    <span>High-Intent Instagram Search SEO Keywords</span>
                   </span>
                   <CopyButton
                     text={result.reelBlueprint.seoKeywords.join(", ")}
@@ -1562,25 +1922,29 @@ ${fiveHashtags.join(" ")}`;
                   {result.reelBlueprint.seoKeywords.map((kw, idx) => (
                     <span
                       key={idx}
-                      className="text-[11px] px-2.5 py-1 rounded-md bg-[#160F24] text-pink-200/90 border border-pink-500/20"
+                      className="text-[11px] px-2.5 py-1 rounded-md bg-[#0D0816] text-pink-200/90 border border-pink-500/20"
                     >
                       {kw}
                     </span>
                   ))}
                 </div>
               </div>
-            </div>
+            </section>
           </div>
 
-          <div className="flex justify-between pt-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-pink-500/15">
             <button
               type="button"
               onClick={() => setActiveStep(1)}
               className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-pink-200 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
-              <span>Back to Step 1 (Read & Download 12pt Ebook)</span>
+              <span>Back to Step 1 (Read &amp; Download 12pt Ebook)</span>
             </button>
+            <CopyButton
+              text={fullTriggerReelPackText}
+              label="Copy Complete Reel Studio Pack"
+            />
           </div>
         </div>
       )}

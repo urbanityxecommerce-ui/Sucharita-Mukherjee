@@ -13,8 +13,10 @@ import {
   isSlopHook,
   boostUserIdeaOptions,
   synthesizeCustomSimilarOutfitReelPack,
+  buildRotatingEbookReelSectionFallback,
   type ReelGenerationResult,
   type EbookGenerationResult,
+  type EbookReelSectionKey,
   type SearchTermItem,
   type UploadedGarmentPreview,
   type StylistVerdictHinglish,
@@ -23,16 +25,24 @@ import {
 dotenv.config();
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+const portArgIdx = process.argv.indexOf("--port");
+const cliPort =
+  portArgIdx !== -1 && process.argv[portArgIdx + 1]
+    ? Number(process.argv[portArgIdx + 1])
+    : NaN;
+const envPort = Number(process.env.PORT);
+const nginxPort = Number(process.env.NGINX_PORT);
+const PORT =
+  Number.isFinite(cliPort) && cliPort > 0
+    ? cliPort
+    : Number.isFinite(envPort) && envPort > 0 && envPort !== nginxPort
+    ? envPort
+    : 3000;
 
 app.use(express.json({ limit: "25mb" }));
 
-const GROQ_FALLBACK_KEY =
-  process.env.GROQ_API_KEY ||
-  "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";
-const OPENROUTER_FALLBACK_KEY =
-  process.env.OPENROUTER_API_KEY ||
-  "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";
+const GROQ_ENV_KEY = process.env.GROQ_API_KEY || "";
+const OPENROUTER_ENV_KEY = process.env.OPENROUTER_API_KEY || "";
 
 function getGeminiClient(): GoogleGenAI | null {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -70,13 +80,45 @@ function withTimeout<T>(
   });
 }
 
+function extractJSONObject(rawContent: string): any {
+  const cleaned = String(rawContent || "")
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
+  if (!cleaned) {
+    throw new Error("Empty JSON response");
+  }
+  const tryParse = (str: string) => {
+    try {
+      return JSON.parse(str);
+    } catch {
+      // Repair trailing commas before } or ] and unescaped control characters
+      const repaired = str
+        .replace(/,\s*([}\]])/g, "$1")
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+      return JSON.parse(repaired);
+    }
+  };
+  try {
+    return tryParse(cleaned);
+  } catch {
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      return tryParse(cleaned.slice(firstBrace, lastBrace + 1));
+    }
+    throw new Error("Invalid JSON response");
+  }
+}
+
 async function callOpenAICompatibleJSON(
   endpoint: string,
   apiKey: string,
   model: string,
   systemPrompt: string,
   userPrompt: string,
-  timeoutMs = 15000
+  timeoutMs = 20000
 ): Promise<any> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -110,21 +152,7 @@ async function callOpenAICompatibleJSON(
 
     const data = await res.json();
     const content = data?.choices?.[0]?.message?.content || "{}";
-    const cleaned = content
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/\s*```$/, "")
-      .trim();
-    try {
-      return JSON.parse(cleaned);
-    } catch {
-      const firstBrace = cleaned.indexOf("{");
-      const lastBrace = cleaned.lastIndexOf("}");
-      if (firstBrace !== -1 && lastBrace > firstBrace) {
-        return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
-      }
-      throw new Error("Invalid JSON response");
-    }
+    return extractJSONObject(content);
   } finally {
     clearTimeout(timeout);
   }
@@ -135,89 +163,130 @@ async function callMultiModelLiveAI(
   userPrompt: string,
   variationSeed = 0
 ): Promise<{ parsed: any; providerName: string } | null> {
-  // Rotate across 4 independent Groq model TPM buckets so rapid-fire Generate/Regenerate clicks never hit 429 rate limits
-  const modelRotation = [
-    ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
-    ["openai/gpt-oss-20b", "llama-3.3-70b-versatile", "openai/gpt-oss-120b", "llama-3.1-8b-instant"],
-    ["llama-3.3-70b-versatile", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.1-8b-instant"],
-  ];
-  const groqModels =
-    modelRotation[Math.abs(Number(variationSeed)) % modelRotation.length];
+  const ai = getGeminiClient();
+  const strictJsonSystemPrompt = `${systemPrompt}\n\nSTRICT JSON VALIDITY RULE: Output ONLY a single valid RFC-8259 JSON object. Inside string values, NEVER use unescaped double quotes (write 5ft 2in instead of 5'2", and use single quotes '...' for quoted words).`;
 
-  if (GROQ_FALLBACK_KEY) {
+  // 1. PRIMARY: Server-Side Gemini (3.1 Flash Lite with automatic retry -> Gemini 4 Hydrogen fallback)
+  if (ai) {
+    const geminiModels: {
+      model: string;
+      label: string;
+      thinkingLevel: ThinkingLevel;
+      timeoutMs: number;
+      seedOffset: number;
+    }[] = [
+      {
+        model: "gemini-3.1-flash-lite",
+        label: "Gemini 3.1 Flash Lite Live AI",
+        thinkingLevel: ThinkingLevel.MINIMAL,
+        timeoutMs: 24000,
+        seedOffset: 0,
+      },
+      {
+        model: "gemini-3.1-flash-lite",
+        label: "Gemini 3.1 Flash Lite Live AI",
+        thinkingLevel: ThinkingLevel.MINIMAL,
+        timeoutMs: 24000,
+        seedOffset: 104729,
+      },
+      {
+        model: "gemini-4-hydrogen",
+        label: "Gemini 4 Hydrogen Live AI",
+        thinkingLevel: ThinkingLevel.LOW,
+        timeoutMs: 30000,
+        seedOffset: 224737,
+      },
+    ];
+
+    for (const candidate of geminiModels) {
+      const dynamicSeed = Math.abs(
+        (Number(variationSeed) * 7919 + Date.now() + candidate.seedOffset) %
+          2147483647
+      );
+      try {
+        const response = await withTimeout(
+          ai.models.generateContent({
+            model: candidate.model,
+            contents: userPrompt,
+            config: {
+              systemInstruction: strictJsonSystemPrompt,
+              responseMimeType: "application/json",
+              seed: dynamicSeed,
+              thinkingConfig: { thinkingLevel: candidate.thinkingLevel },
+            },
+          }),
+          candidate.timeoutMs,
+          candidate.label
+        );
+
+        if (response.text) {
+          const parsed = extractJSONObject(response.text);
+          if (
+            parsed &&
+            typeof parsed === "object" &&
+            Object.keys(parsed).length > 0
+          ) {
+            return {
+              parsed,
+              providerName: candidate.label,
+            };
+          }
+        }
+      } catch (err: any) {
+        console.error(
+          `[AI] ${candidate.label} failed:`,
+          err?.status || "",
+          err?.message?.slice(0, 220) || err
+        );
+      }
+    }
+  } else {
+    console.error("[AI] GEMINI_API_KEY is not configured in server environment.");
+  }
+
+  // 2. OPTIONAL ENV FALLBACK: Only used if explicitly configured in environment variables
+  if (GROQ_ENV_KEY) {
+    const groqModels = [
+      "openai/gpt-oss-120b",
+      "llama-3.3-70b-versatile",
+      "llama-3.1-8b-instant",
+    ];
     for (const modelName of groqModels) {
       try {
         const parsed = await callOpenAICompatibleJSON(
           "https://api.groq.com/openai/v1/chat/completions",
-          GROQ_FALLBACK_KEY,
+          GROQ_ENV_KEY,
           modelName,
           systemPrompt,
           userPrompt,
-          14000
+          18000
         );
         if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) {
           return {
             parsed,
-            providerName:
-              modelName === "llama-3.3-70b-versatile"
-                ? "Llama 3.3 70B Live Mastermind AI"
-                : modelName === "openai/gpt-oss-20b"
-                ? "GPT-OSS 20B Turbo Live AI"
-                : modelName === "llama-3.1-8b-instant"
-                ? "Llama 3.1 Instant Live AI"
-                : "GPT-OSS 120B Live Mastermind AI",
+            providerName: `Groq ${modelName} Live AI`,
           };
         }
       } catch {
-        // Try next model in cascade
+        // Try next model
       }
     }
   }
 
-  // Try Gemini 4 Hydrogen if configured
-  try {
-    const ai = getGeminiClient();
-    if (ai) {
-      const response = await withTimeout(
-        ai.models.generateContent({
-          model: "gemini-4-hydrogen",
-          contents: `${systemPrompt}\n\n${userPrompt}`,
-          config: {
-            responseMimeType: "application/json",
-            thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-          },
-        }),
-        10000,
-        "Gemini 4 Hydrogen"
-      );
-      if (response.text) {
-        const parsed = JSON.parse(response.text.trim());
-        if (parsed && typeof parsed === "object") {
-          return {
-            parsed,
-            providerName: "Gemini 4 Hydrogen Live AI",
-          };
-        }
-      }
-    }
-  } catch {
-    // Try OpenRouter fallback
-  }
-
-  if (OPENROUTER_FALLBACK_KEY) {
+  if (OPENROUTER_ENV_KEY) {
     try {
       const parsed = await callOpenAICompatibleJSON(
         "https://openrouter.ai/api/v1/chat/completions",
-        OPENROUTER_FALLBACK_KEY,
-        "google/gemini-2.0-flash-001",
+        OPENROUTER_ENV_KEY,
+        "meta-llama/llama-3.3-70b-instruct",
         systemPrompt,
         userPrompt,
-        11000
+        18000
       );
       if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) {
         return {
           parsed,
-          providerName: "OpenRouter Live Mastermind AI",
+          providerName: "OpenRouter Live AI",
         };
       }
     } catch {
@@ -885,20 +954,19 @@ app.post("/api/boost-idea", async (req, res) => {
 
   const hasCustomRaw = rawInput && String(rawInput).trim().length > 0;
 
-  if (GROQ_FALLBACK_KEY) {
-    try {
-      const systemPrompt = isEbookMode
-        ? `You are a Tier-1 Grey-Hat Oracle & Fact-Checked 1% Insider Strategist in India.
+  try {
+    const systemPrompt = isEbookMode
+      ? `You are a sharp 2026 Gen-Z creator & researcher in India who writes viral, zero-gatekeeping private playbooks (NO boring textbook titles, NO corporate jargon, NO dramatic AI slop).
 ${
   hasCustomRaw
     ? `The user typed this specific custom topic (may be in Hinglish, Hindi, or English): "${String(rawInput).trim()}".
-Translate and upgrade the user's EXACT request into 4 completely different, magnetic, high-converting, 100% Pure English Ebook Dossier titles that directly fulfill every requirement in "${String(rawInput).trim()}".
+Turn the user's EXACT request into 4 completely different, super-catchy, plain-English 2026 Playbook titles that directly answer "${String(rawInput).trim()}".
 CRITICAL RULE: Stay 100% faithful to the user's exact topic! Do NOT mention ElevenLabs, Voice Cloning, Outlier.ai, or IndiaMART unless the user explicitly asked for them!`
-    : `Turn the category ("${category}") into 4 completely different, extreme-FOMO, zero-fluff Grey-Hat Oracle Ebook Dossier titles in SUPER-SIMPLE ENGLISH (covering dark psychology WhatsApp closing, Instagram Trial-Reel micro-funnels, Google Maps local clinic arbitrage, Pinterest-to-Gumroad digital planners, free Harvard/Tata credentials, or ₹150 Indian pharmacy generic salts—NEVER mention ElevenLabs or Voice Cloning!).`
+    : `Turn the category ("${category}") into 4 completely different, super-catchy, zero-gatekeeping 2026 Gen-Z Playbook titles in SUPER-SIMPLE EVERYDAY ENGLISH (covering real WhatsApp client tricks, 6-second Trial Reels, Google Maps local clinic setups, free Harvard/Tata certificates, or ₹200 Indian pharmacy skincare swaps—NEVER mention ElevenLabs or Voice Cloning!).`
 }
 Never use the word "GlowCash" and never put low PDF prices like "₹19" or "₹29" as the income in the title.
 Return strictly compact JSON: {"boostedIdeas": ["title 1", "title 2", "title 3", "title 4"]}`
-        : `You are a "Lakho Mein Ek" Real-Time Personal Stylist & Meesho Mix-and-Match Outfit Combination Expert in India (Live Date: ${dailyCtx.formattedDate} | Today's Daily Focus: ${dailyCtx.todaysStylingFocus}).
+      : `You are a "Lakho Mein Ek" Real-Time Personal Stylist & Meesho Mix-and-Match Outfit Combination Expert in India (Live Date: ${dailyCtx.formattedDate} | Today's Daily Focus: ${dailyCtx.todaysStylingFocus}).
 ${
   hasCustomRaw
     ? `The user typed this specific fashion/styling request: "${String(rawInput).trim()}".
@@ -910,24 +978,21 @@ RULES:
 2. Focus on how the combination transforms the person's look (makes 5'0" girls look 5'5", hides lower tummy on Pear/Mid-Size bodies, glows on warm Indian skin, or builds a complete 4-piece look under ₹1,199).
 Return strictly compact JSON: {"boostedIdeas": ["combo idea 1", "combo idea 2", "combo idea 3", "combo idea 4"]}`;
 
-      const parsed = await callOpenAICompatibleJSON(
-        "https://api.groq.com/openai/v1/chat/completions",
-        GROQ_FALLBACK_KEY,
-        "openai/gpt-oss-120b",
-        systemPrompt,
-        `User Request: "${rawInput || (isEbookMode ? "2026-2027 Verified Non-Bidding Remote Income & Secret Portals" : "Unique 4-Piece Kurti & Jeans Body-Proportion Styling Combination")}" | Category: "${category}" | Live Date: ${dailyCtx.formattedDate} | Seed: ${Date.now()}`,
-        8000
-      );
-      if (Array.isArray(parsed?.boostedIdeas) && parsed.boostedIdeas.length > 0) {
-        return res.json({
-          boostedIdeas: parsed.boostedIdeas
-            .slice(0, 4)
-            .map((t: any) => stripBrandFromEbookText(String(t))),
-        });
-      }
-    } catch {
-      // Fall through to local booster
+    const aiResp = await callMultiModelLiveAI(
+      systemPrompt,
+      `User Request: "${rawInput || (isEbookMode ? "2026-2027 Verified Non-Bidding Remote Income & Secret Portals" : "Unique 4-Piece Kurti & Jeans Body-Proportion Styling Combination")}" | Category: "${category}" | Live Date: ${dailyCtx.formattedDate} | Seed: ${Date.now()}`,
+      Date.now() % 1000
+    );
+    const parsed = aiResp?.parsed;
+    if (Array.isArray(parsed?.boostedIdeas) && parsed.boostedIdeas.length > 0) {
+      return res.json({
+        boostedIdeas: parsed.boostedIdeas
+          .slice(0, 4)
+          .map((t: any) => stripBrandFromEbookText(String(t))),
+      });
     }
+  } catch {
+    // Fall through to local booster
   }
 
   return res.json({ boostedIdeas: boostedOptions });
@@ -1341,139 +1406,154 @@ app.post("/api/generate-ebook", async (req, res) => {
     : `- Mandatory 5-Chapter Focus for THIS Generation: ${chosenBlueprint.distinctChaptersFocus}
 - STRICT BAN ON OVERUSED TOPICS: Do NOT write about ElevenLabs, Voice Cloning, or Outlier.ai in this dossier! Stick 100% to the 5 distinct chapter topics specified above!`;
 
-  const jsonSchemaPrompt = `[SYSTEM ROLE: THE GREY-HAT ORACLE & ELITE BEHAVIORAL HACKER]
-You are a Tier-1 Underground Strategist, Behavioral Psychology Expert, and Fact-Checked Information Broker in Late-2026 / 2027.
-Your goal is to generate highly addictive, deeply detailed "classified 1% insider" knowledge on:
+  const jsonSchemaPrompt = `[ROLE: YOUR SMARTEST GEN-Z INSIDER FRIEND — ZERO GATEKEEPING, ZERO AI SLOP, 100% REAL TALK]
+You are a sharp, brutally honest, super-smart 2026 Gen-Z creator & researcher writing a private Notion-style playbook/cheat-sheet for a friend on:
 - Requested Subject: "${effectiveTopic}"
 - Category: "${category === "All" ? chosenBlueprint.category : category}"
 ${customTopicFocusBlock}
-${avoidPreviousTitle ? `- STRICT ANTI-REPETITION RULE: The user already generated: "${avoidPreviousTitle}". You MUST write a 100% DIFFERENT Ebook title, 5 completely different chapters/angles, different websites/portals, and different copy-paste scripts!` : ""}
+${avoidPreviousTitle ? `- STRICT ANTI-REPETITION RULE: The user already generated: "${avoidPreviousTitle}". You MUST write a 100% DIFFERENT playbook title, 5 completely different parts/angles, different websites/tools, and different copy-paste scripts!` : ""}
 
-[CRITICAL PSYCHOLOGICAL & GROUND-TRUTH TRIGGERS — MUST OBEY]
-1. THE CULT OF SECRECY: Never give standard, generic, or boring textbook advice. Frame every chapter as a "classified loophole," "grey-hat mechanism," "psychological trigger," or "backdoor shortcut" that gives the reader an unfair advantage over the 99% of normal people.
-2. FOMO & URGENCY: Make the reader feel that this window of opportunity is open right now for action-takers before the masses flood it.
-3. RUTHLESS PRACTICALITY & 100% HONEST GROUND-TRUTH (ZERO TECHNICAL HALLUCINATIONS):
-   - Every step must be hyper-specific, deeply detailed, unconventional, and immediately actionable today.
+[TONE & WRITING RULES — READ THIS 3 TIMES, ZERO EXCEPTIONS]
+1. WRITE LIKE A REAL 2026 GEN-Z HUMAN, NOT A BORING TEXTBOOK OR ROBOTIC AI:
+   - Write in SUPER-SIMPLE, everyday spoken English (8th-grade reading level — anyone in college or starting out should understand every single line in 1 second without opening a dictionary!).
+   - Vibe: Like your smart older sister or internet bestie spilling real, gatekept notes in your DM—honest, motivating, casual, sharp, and straight to the point.
+   - NO boring "Chapter 1 / Chapter 2" textbook tone and NO cheesy over-dramatic AI movie-trailer hype!
+2. STRICT BANNED WORDS & AI SLOP LIST (NEVER USE THESE ANYWHERE IN THE EBOOK OR REEL!):
+   - BANNED JARGON / CORPORATE WORDS: "geographic nodes", "strategic time", "workspace", "networking hubs", "arbitrage", "ecosystem", "infiltration", "leverage", "paradigm", "synergy", "unlock", "elevate", "game-changer", "delve", "tapestry", "classified dossier", "loaded weapon", "elites are hiding this", "cult of secrecy", "grey-hat exploit", "jedi mind-trick", "monetize your potential", "insider-leak aesthetic", "No AI robot voices", "conversion funnel", "optimize your workflow".
+   - BANNED AD-COPY CLICHÉS: "Tired of wasting time...", "Stop [X], start [Y]", "No fluff, just...", "Want to level up?", "Hand moving to a coffee cup showing a clean, organized workspace", "Close up of a computer screen showing [topic]".
+   - BAD (AI Slop — NEVER write like this): "The 99% illusion is leveraging outdated geographic nodes. Just 2 hours of strategic time in your clean workspace."
+   - GOOD (100% Real Gen-Z Human): "Everyone keeps doing the same crowded thing they saw on a random YouTube video and wondering why nothing happens. Here is the actual shortcut that works right now—takes 20 minutes on your phone and costs ₹0."
+3. 100% HONEST, FACT-CHECKED GROUND-TRUTH (ZERO FAKE URLS OR TECHNICAL HALLUCINATIONS):
+   - Every single step must be specific, real, and doable today.
    - ZERO FAKE URLS / ZERO RANDOM DOCUMENT IDs: NEVER invent fake URLs (like saastrader.com, imagecheck.com, affiliate.amazon.in) or fake random Google Docs IDs (like docs.google.com/document/d/1Zx...). Only use 100% real, verified root domains and official portals:
      * Amazon Associates India: affiliate-program.amazon.in (Real commissions: 1%–4% on electronics/laptops, 5%–9% on home, kitchen, books & beauty — NEVER write "₹15% commission"!)
      * Meta Ad Library: facebook.com/ads/library (Filter: Country = India -> All Ads -> Active Ads)
-     * Google Maps Local Arbitrage: google.com/maps (Businesses with 40+ reviews but NO Website button)
-     * Canva Free: canva.com (Click "Create a design" -> "Custom size" — NEVER claim "Magic Resize" is free; Magic Resize is a paid Canva Pro feature!)
+     * Google Maps Local Filter: google.com/maps (Businesses with 40+ reviews but NO Website button)
+     * Canva Free: canva.com (Click "Create a design" -> "Custom size" — NEVER claim "Magic Resize" is free; Magic Resize is Canva Pro!)
      * Screen Recording & Free B-Roll: obsproject.com (free OBS Studio) + pexels.com/videos (download free 4K B-roll FROM Pexels and combine with your OBS recording inside CapCut or DaVinci Resolve — NEVER say "export OBS clips to Pexels"!)
-     * YouTube Monetization Truth: State clearly that YouTube AdSense requires 1,000 subscribers + 4,000 public watch hours (and real Indian AdSense RPM is ₹50–₹200 per 1,000 views), so Day-1 monetization uses Amazon Affiliate links (affiliate-program.amazon.in) + a ₹99–₹199 Digital Product link in the pinned comment!
+     * YouTube Monetization Truth: State clearly that YouTube AdSense requires 1,000 subscribers + 4,000 public watch hours (real Indian AdSense RPM is ₹50–₹200 per 1,000 views), so Day-1 money comes from Amazon Affiliate links (affiliate-program.amazon.in) + a ₹99–₹199 Digital Guide in the pinned comment!
      * Indian Checkout & Auto-DM: superprofile.bio, cosmofeed.com, gumroad.com, manychat.com
      * Free Certifications & Study: cs50.harvard.edu/x (free official Harvard CS50x certificate without paying edX), theforage.com (free Tata, JPMorgan, BCG & Deloitte virtual job simulations), notebooklm.google.com (free Audio Overview & source tables), perplexity.ai, typeset.io, apps.ankiweb.net, education.github.com/pack
-     * Indian Pharmacy Salt Lookup: 1mg.com (Click the "Salt Composition" link under the medicine name; always state mandatory 24-hour inner-forearm patch test, max 2x/week night rule + SPF 50 next morning for Glyco-6 6% cream, and dermatologist consultation for prescription actives)
+     * Indian Pharmacy Salt Lookup: 1mg.com (Click the "Salt Composition" link under the medicine name; always state 24-hour inner-forearm patch test, max 2x/week night rule + SPF 50 next morning for Glyco-6 6% cream, and dermatologist advice for prescription actives)
      * Global UX & Research Portals: usertesting.com/get-paid-to-test ($10 USD per 15–20 min test paid 14 days later via KYC-verified Indian PayPal), prolific.com (£6–£9/hr GBP via PayPal), dscout.com/scouts, trymata.com/get-paid-to-test, respondent.io
-4. 100% VERIFIED MATHEMATICAL CALCULATIONS (ZERO ARITHMETIC ERRORS):
-   - Every calculation in "incomeMathOrProof" MUST be 100% mathematically accurate and written as ONE SINGLE, CLEAN MULTIPLICATION FORMULA (do NOT combine 2 or 3 different products in one math equation!).
-   - STRICT FORMULA FOR WEEKLY MATH: [Units/Week] × [₹ Unit Rate] = [₹ Exact Weekly Total]/week × 4 weeks = [₹ Exact Monthly Total]/month (Example: "2 client packs/week × ₹2,500 = ₹5,000/week × 4 weeks = ₹20,000/month").
-   - STRICT FORMULA FOR DAILY MATH: [Units/Day] × [₹ Unit Rate] = [₹ Exact Daily Total]/day × 30 days = [₹ Exact Monthly Total]/month (Example: "10 PDF sales/day × ₹49 = ₹490/day × 30 days = ₹14,700/month").
-   - NEVER confuse 1 week with 1 month! Double-check that A × B = C and Weekly × 4 = Monthly!
-   - Always write full Rupee numbers with commas (e.g. ₹2,500, ₹20,000) instead of "₹4k", and use 1 USD = ₹85 and 1 GBP = ₹108 consistently.
-5. TONE (MOST IMPORTANT):
-   - Authoritative, sharp, highly intelligent, and motivating—you are handing the reader a loaded unfair advantage.
-   - CRITICAL: Write in SUPER-SIMPLE, EASY-TO-UNDERSTAND, HONEST, NATURAL HUMAN ENGLISH! Do NOT use overly complex vocabulary, robotic AI clichés, or cheesy over-dramatic sci-fi words that feel fake. It must read like a real, street-smart, top-1% human mentor speaking directly and honestly to the reader.
+4. 100% VERIFIED MATH (ZERO ARITHMETIC ERRORS):
+   - Every calculation in "incomeMathOrProof" MUST be 100% mathematically right and written as ONE SINGLE CLEAN MULTIPLICATION FORMULA (do NOT mix 2–3 products in one equation!).
+   - WEEKLY MATH: [Units/Week] × [₹ Unit Rate] = [₹ Exact Weekly Total]/week × 4 weeks = [₹ Exact Monthly Total]/month (Example: "2 client packs/week × ₹2,500 = ₹5,000/week × 4 weeks = ₹20,000/month").
+   - DAILY MATH: [Units/Day] × [₹ Unit Rate] = [₹ Exact Daily Total]/day × 30 days = [₹ Exact Monthly Total]/month (Example: "10 PDF sales/day × ₹49 = ₹490/day × 30 days = ₹14,700/month").
+   - Double-check A × B = C and Weekly × 4 = Monthly! Write full Rupee numbers with commas (₹2,500, ₹20,000) instead of "₹4k", and use 1 USD = ₹85 and 1 GBP = ₹108.
 
-CRITICAL EBOOK TITLE & PRICING RULES (VIOLATION IS STRICTLY FORBIDDEN):
-1. NEVER PUT THE PDF SELLING PRICE (${priceDisplay}, ₹19, ₹29, ₹49) IN THE EBOOK TITLE OR CHAPTERS:
-   - "${priceDisplay}" is ONLY the small price of the PDF guide in the Instagram Reel caption—it is NEVER the money the reader earns!
-   - NEVER write "${priceDisplay} Cash", "Steps to ${priceDisplay}", "₹19", "₹29", or "₹49" inside "ebook.title", "ebook.subtitle", or any chapter!
-2. NEVER COPY-PASTE THE USER'S RAW CUSTOM TOPIC VERBATIM INTO "ebook.title":
-   - Even if the user typed rough keywords or Hinglish in Requested Subject ("${effectiveTopic}"), craft a polished, attractive, magnetic 100% PURE ENGLISH Book Title (8–14 words) that summarizes the exact classified knowledge and outcomes taught inside the 5 chapters!
-3. 100% WHITE-LABEL EBOOK: Never mention "GlowCash" anywhere. Return EXACTLY 5 hashtags.
+CRITICAL TITLE & PRICING RULES:
+1. NEVER PUT THE PDF SELLING PRICE (${priceDisplay}, ₹19, ₹29, ₹49) IN THE EBOOK TITLE OR PARTS:
+   - "${priceDisplay}" is ONLY the small price of the PDF in the Instagram Reel caption—NEVER the money the reader makes!
+2. NEVER COPY-PASTE RAW HINGLISH INTO "ebook.title":
+   - Craft a punchy, modern, trendy 100% PURE ENGLISH Playbook Title (7–13 words) that actually sounds like something a smart Gen-Z creator would save and buy!
+3. 100% WHITE-LABEL: Never mention "GlowCash" anywhere. Return EXACTLY 5 hashtags.
 
-[OUTPUT FORMAT — STRICTLY FOLLOW THIS EXACT STRUCTURE FOR ALL 5 CHAPTERS]:
-Each of the 5 chapters in "chapters" MUST contain deep, comprehensive detail across these exact fields:
-- "title": High-impact pure English chapter title (without "Chapter X" prefix, as the UI adds "Chapter 0X · ")
-- "subtitle": "⚠️ WARNING: Keep this strictly confidential. — [1-sentence sharp promise & Free ₹0 / Paid clarity]"
-- "coreSecretSummary": "👁️ The 99% Illusion vs. The 1% Reality:" Write 3–4 detailed, hard-hitting sentences in simple human English ruthlessly exposing why what 99% of normal people do fails, followed by the unconventional 1% truth that actually works and motivates the reader.
-- "whereToFindOrHiddenTrick": "🎯 The 'Grey-Hat' Mechanism (The Secret):" Write a detailed 3–4 sentence classified briefing revealing the core secret—the exact underrated portal/tool, algorithm backdoor, or psychological loophole, including the exact URL and real clickable UI path.
-- "stepByStepExecution": Must be an array of 3 to 4 deeply detailed, step-by-step strings starting with these exact labels:
-  * "1️⃣ The Infiltration: [Detailed instructions on how to set up the account, profile, or positioning quietly so you bypass 99% of competition]"
-  * "2️⃣ The Trigger: [The exact action, real UI click-path, search filter, assessment secret, or behavioral hook that initiates the exploit]"
-  * "3️⃣ The Leverage: [How to scale, pass quality checks, and extract maximum money, approvals, clients, or results effortlessly]"
-  * "4️⃣ The Safety Lock: [Exact payout setup—e.g. KYC PayPal/Payoneer/UPI 50% advance—or anti-rejection rule so your effort is 100% protected]"
-- "exactToolsOrWebsites": Array of 2 real verified websites/tools per chapter with exact URL, role, and insiderTip.
+[PLAYBOOK FORMAT — 5 MODERN GEN-Z PLAYBOOK PARTS (NO BORING "CHAPTER 1 / CHAPTER 2" VIBE!)]
+Each of the 5 items in "chapters" MUST be super-clear, detailed, and written in simple conversational Gen-Z English:
+- "title": Catchy, plain-English title (NO "Chapter X" prefix — the UI shows "01 · ", "02 · ", etc.)
+- "subtitle": Crisp 1-line real-talk vibe check (e.g., "₹0 to start · takes 20 mins on your phone · zero gatekeeping" — NEVER write "WARNING: Keep this strictly confidential"!)
+- "coreSecretSummary": (Shown under "What Everyone Gets Wrong vs. What Actually Works") Write 3–4 super-simple, honest, relatable sentences calling out what most people waste time on, then showing the real thing that actually works today.
+- "whereToFindOrHiddenTrick": (Shown under "The Actual Shortcut") Write 3–4 crystal-clear sentences revealing the exact website, hidden filter, or psychological trick + exact clickable button path like you're showing a friend on your phone.
+- "stepByStepExecution": Array of 4 super-clear steps starting with simple human labels:
+  * "1. Setup: [Exact simple first step to get started in 5 minutes]"
+  * "2. The Move: [Exact button/filter/action to take—real UI names, zero jargon]"
+  * "3. Scale It: [How to repeat this cleanly and get better results fast]"
+  * "4. Stay Safe: [Real safety/payout/avoid-scam tip so you never waste effort]"
+- "exactToolsOrWebsites": Array of 2 real verified links/tools per part with exact URL, role (Free ₹0 vs Paid), and a real practical tip.
 - "copyPasteTemplateOrScript":
-  * "label": "🧠 The Jedi Mind-Trick / Secret Copy-Paste Script"
-  * "content": A complete, detailed word-for-word script, assessment answer rubric, search operator formula, or behavioral action that acts like a cheat code.
-- "incomeMathOrProof": "🔥 The Unfair Advantage:" 2 punchy, motivating sentences with 100% verified step-by-step arithmetic ([Unit Rate] × [Weekly Volume] = [Weekly Total]/week × 4 weeks = [Exact Monthly Total]/month) explaining why this makes the reader unstoppable while the 99% don't even see it coming.
+  * "label": "Copy-Paste Message / Cheat Sheet" (or specific short label like "Copy-Paste DM Script")
+  * "content": A natural, human-sounding word-for-word message, prompt, checklist, or script you can literally copy and send today without sounding like a robot.
+- "incomeMathOrProof": 2 motivating, realistic sentences with 100% verified arithmetic (if applicable to the topic) or real-world time/money savings explaining why this actually works.
+
+[VIRAL 2026 GEN-Z REEL BLUEPRINT RULES — ZERO AI SLOP, ZERO AD VIBES!]
+- For "sixSecondVideoIdea": NEVER suggest "Close up of computer screen showing [topic]" or "Hand moving to a coffee cup on a clean organized workspace" or "Stop X, start Y"!
+  Use REAL viral 2026 Gen-Z organic Reel formats: e.g., tying hair up / putting on lip balm while a short lowercase text hook sits on screen, messy hostel bed late-night phone scroll, looking out an auto/metro window at sunset, raw Apple/Android Notes app scroll with 1 blurred line peeking out, boiling chai/Maggi casual kitchen clip, or flipping real handwritten notebook pages in natural window light.
+- For "psychologicalPriceOverlays": Write 4 short, punchy, 100% human-sounding Instagram Reel texts (lowercase/casual Gen-Z energy, simple everyday words, relatable feelings, ZERO corporate jargon, ZERO "Tired of wasting time...").
+  Example GOOD style: "not to gatekeep anymore because this literally saved my whole month 😭 put the exact steps + links in a ${priceDisplay} pdf, comment ${autoDmTrigger}"
+- For "autoDmCaption": Sound like a real 22-year-old friend sharing their actual private notes—warm, blunt, zero corporate hype, referencing the real parts inside the guide, naturally embedding searchable words, and ending with a chill CTA to comment "${autoDmTrigger}".
 
 Return strictly valid JSON with this exact structure:
 {
   "ebook": {
-    "editionTag": "CLASSIFIED 1% INSIDER DOSSIER · GREY-HAT ORACLE EDITION · ZERO FLUFF",
-    "title": "Attractive, Magnetic 100% Pure English Book Title Summarizing What Is Taught Inside the 5 Chapters (NEVER include ${priceDisplay} or raw Hinglish!)",
-    "subtitle": "Clear, high-status simple-English subtitle explaining the exact classified portals, psychological triggers & realistic outcome",
-    "targetReaderPromise": "1–2 sentences of honest, motivating human English explaining the unfair advantage the reader will unlock today",
-    "goldenRuleTitle": "⚠️ CLASSIFIED BRIEFING: The #1 Grey-Hat Execution & Anti-Scam Rule",
-    "goldenRuleBody": "2–3 sentences in simple, sharp English explaining the #1 non-negotiable rule for executing this dossier safely and profitably",
+    "editionTag": "PRIVATE 2026 PLAYBOOK · NO GATEKEEPING · ZERO FLUFF",
+    "title": "Catchy, Modern 100% Pure English Playbook Title (7-13 words, NEVER include ${priceDisplay} or raw Hinglish!)",
+    "subtitle": "Simple, honest 1-line subtitle explaining what exact shortcuts, real links & scripts are inside",
+    "targetReaderPromise": "1–2 sentences of honest, friendly, motivating Gen-Z English telling the reader what they'll be able to do after reading this tonight",
+    "goldenRuleTitle": "Real Talk Before You Start (The #1 Rule)",
+    "goldenRuleBody": "2–3 simple, honest sentences with the #1 mistake to skip and how to actually get results fast without getting scammed or overwhelmed",
     "hardestPartSolvedBox": {
-      "title": "🔥 THE HARDEST PART SOLVED: Direct Backdoor Links, High-Approval Assessment Rules & Real UI Click-Paths",
+      "title": "The Hardest Part Solved: Exact Links, Hidden Filters & Click-Paths",
       "exactWhereToFindMap": [
-        "1. CLASSIFIED PORTAL / CLICK-PATH #1: Exact website URL + real clickable path + insider approval secret...",
-        "2. CLASSIFIED PORTAL / CLICK-PATH #2: Exact website URL + real clickable path + insider approval secret...",
-        "3. CLASSIFIED PORTAL / CLICK-PATH #3: Exact website URL + real clickable path + insider approval secret...",
-        "4. CLASSIFIED PORTAL / CLICK-PATH #4: Exact website URL + real clickable path + insider approval secret..."
+        "1. Direct Link / Filter #1: Exact real website URL + exact button click-path + quick tip...",
+        "2. Direct Link / Filter #2: Exact real website URL + exact button click-path + quick tip...",
+        "3. Direct Link / Filter #3: Exact real website URL + exact button click-path + quick tip...",
+        "4. Direct Link / Filter #4: Exact real website URL + exact button click-path + quick tip..."
       ],
-      "zeroFollowerTrafficTrick": "The exact 100% real ground-truth mechanism to get approved or win buyers without bidding wars or followers"
+      "zeroFollowerTrafficTrick": "The simplest real way to get results/approvals/buyers even if you're starting from 0 today"
     },
     "quickValueBreakdown": [
-      {"metric": "1. The 99% Trap Destroyed", "detail": "Why normal methods fail and how this dossier bypasses the crowd"},
-      {"metric": "2. Upfront Capital Truth", "detail": "Clear breakdown of 100% Free (₹0) portals vs optional Paid tiers"},
-      {"metric": "3. Real UI Click-Paths", "detail": "Every URL, button, and psychological script is 100% real and verified"},
-      {"metric": "4. The Unfair Advantage", "detail": "Honest timeline and measurable weekly/monthly outcome"}
+      {"metric": "1. What You Skip", "detail": "The boring crowded method you never have to waste time on again"},
+      {"metric": "2. Real Cost", "detail": "Honest breakdown of what is 100% Free (₹0) vs optional paid tools"},
+      {"metric": "3. Real Click-Paths", "detail": "Every website, button, and copy-paste script is 100% real and checked"},
+      {"metric": "4. Realistic Outcome", "detail": "Honest timeline and what you can actually expect"}
     ],
     "chapters": [
       {
         "chapterNumber": 1,
-        "title": "Chapter 1 Title in Attractive Pure English (Directly covering the requested topic)",
-        "subtitle": "⚠️ WARNING: Keep this strictly confidential. — [Specific chapter focus & Free ₹0 / Paid clarity]",
-        "coreSecretSummary": "Detailed 3–4 sentences for '👁️ The 99% Illusion vs. The 1% Reality' in simple, honest, motivating human English",
-        "whereToFindOrHiddenTrick": "Detailed 3–4 sentences for '🎯 The Grey-Hat Mechanism (The Secret)' with exact URLs and real UI click-paths",
+        "title": "Catchy Pure English Play Title (NO 'Chapter 1' prefix!)",
+        "subtitle": "₹0 to start · [1-line casual vibe check on why this part hits]",
+        "coreSecretSummary": "3–4 simple, honest sentences: what everyone gets wrong vs what actually works right now",
+        "whereToFindOrHiddenTrick": "3–4 simple sentences revealing the real website, exact clickable button path, or shortcut with zero jargon",
         "stepByStepExecution": [
-          "1️⃣ The Infiltration: Detailed step-by-step setup...",
-          "2️⃣ The Trigger: Detailed exact click-path, filter, or action...",
-          "3️⃣ The Leverage: Detailed scaling and extraction method...",
-          "4️⃣ The Safety Lock: Detailed payment/verification or anti-rejection rule..."
+          "1. Setup: Clear, simple first step...",
+          "2. The Move: Exact real button/filter/action...",
+          "3. Scale It: How to get consistent results...",
+          "4. Stay Safe: Smart safety/payout/avoid-rejection tip..."
         ],
         "exactToolsOrWebsites": [
-          {"name": "Exact Website URL #1", "role": "What role/work it offers (state Free ₹0 vs Paid clearly)", "insiderTip": "Exact high-approval insider tip"},
-          {"name": "Exact Website URL #2", "role": "What role/work it offers (state Free ₹0 vs Paid clearly)", "insiderTip": "Exact high-approval insider tip"}
+          {"name": "Exact Real Website URL #1", "role": "What it does (Free ₹0 vs Paid)", "insiderTip": "Simple practical tip that saves time"},
+          {"name": "Exact Real Website URL #2", "role": "What it does (Free ₹0 vs Paid)", "insiderTip": "Simple practical tip that saves time"}
         ],
         "copyPasteTemplateOrScript": {
-          "label": "🧠 The Jedi Mind-Trick / Secret Script",
-          "content": "Complete, detailed word-for-word copy-paste script, prompt, or rubric template"
+          "label": "Copy-Paste Cheat Sheet",
+          "content": "Natural, human-sounding word-for-word script, prompt, or checklist ready to copy today"
         },
-        "incomeMathOrProof": "Detailed 2 sentences for '🔥 The Unfair Advantage' with 100% verified step-by-step math ([Unit Rate] × [Weekly Volume] = [Weekly Total]/week × 4 weeks = [Exact Monthly Total]/month) and motivating takeaway"
+        "incomeMathOrProof": "2 realistic, motivating sentences with 100% verified step-by-step math (if income-related) or real time/money saved"
       }
     ],
-    "twentyFourHourChecklist": ["Action 1", "Action 2", "Action 3", "Action 4", "Action 5"]
+    "twentyFourHourChecklist": ["Quick Action 1", "Quick Action 2", "Quick Action 3", "Quick Action 4", "Quick Action 5"]
   },
   "reelBlueprint": {
+    "aiVideoPrompts": {
+      "rawPhoneFirstFramePrompt": "9:16 candid real-life iPhone 15 Pro first-frame photo prompt (for ChatGPT Image / Midjourney / Ideogram) depicting a relatable everyday Gen-Z moment in India (messy hostel bed, terrace sunset, tying hair / lip balm casual mirror frame, boiling chai/Maggi, auto/metro window, or real desk lamp—NEVER a generic clean corporate workspace!). Slight natural phone grain, upper-middle 35% clean space for Instagram text, ZERO neon cyber glow, ZERO plastic CGI skin, ZERO garbled screen text.",
+      "zeroSlopVideoMotionPrompt": "6-second 9:16 raw handheld phone video motion prompt (for Kling / Veo / Runway / Flow AI) with natural human micro-shake and everyday movement (casual phone scroll, notebook page flip, looking out a window, stirring chai)—100% indistinguishable from a real friend's unedited Instagram story, zero ad look, zero morphing.",
+      "relatablePovBrollPrompt": "6-second deeply relatable 9:16 Gen-Z everyday POV clip capturing real quiet relief/curiosity (e.g., finally closing 10 confusing tabs at midnight or opening clean private Notes on bed)—feels 100% personal and human, zero commercial energy.",
+      "algorithmTriggerNote": "1–2 plain-English sentences on why viewers don't skip this as an ad and why it triggers 2026 Instagram loops, saves, bestie-sends, and comments."
+    },
     "sixSecondVideoIdea": {
-      "visualStyle": "6-Second Dark Aesthetic B-Roll / Screen Recording of This Classified Dossier PDF",
-      "shotByShot": ["0.0s–2.0s: ...", "2.0s–4.0s: ...", "4.0s–6.0s: ..."],
-      "lightingAndAudioTip": "2026 Instagram Edits & Trial Reel tip"
+      "visualStyle": "Specific, trendy 2026 Gen-Z casual phone-shot Reel vibe (NO generic 'clean organized workspace' or 'insider-leak aesthetic' buzzwords!)",
+      "shotByShot": ["0.0s–2.0s: Relatable casual real-life clip (e.g., mid-task getting ready, messy bed scroll, auto window, or real Notes app—NOT 'close up of computer screen')...", "2.0s–4.5s: Quick candid phone-screen peek of the actual playbook notes/links with blurred spoilers...", "4.5s–6.0s: Chill human wrap-up shot + short casual text telling viewers to comment ${autoDmTrigger} for the ${priceDisplay} link..."],
+      "lightingAndAudioTip": "Simple 2026 Instagram Edits + trending quiet audio + Trial Reel tip in plain English"
     },
     "psychologicalPriceOverlays": [
-      {"triggerType": "1. Snack Price / FOMO Comparison", "overlayText": "Comparing ${priceDisplay} PDF access to a daily snack", "whyItConverts": "string"},
-      {"triggerType": "2. The 99% vs 1% Curiosity Hook", "overlayText": "Why 99% fail while this ${priceDisplay} classified dossier gives the exact links", "whyItConverts": "string"},
-      {"triggerType": "3. Hardest-Part Solved Hook", "overlayText": "Shows exact direct links, approval tests & Jedi Mind-Trick scripts", "whyItConverts": "string"}
+      {"triggerType": "1. Relatable Real-Talk Hook", "overlayText": "Short, super-natural Gen-Z line that mirrors the exact frustration without sounding like an ad (NO 'Tired of wasting time' or jargon!)", "whyItConverts": "Simple 1-line reason"},
+      {"triggerType": "2. No-Gatekeeping Curiosity Hook", "overlayText": "Casual friend-spilling-tea tease mentioning what's actually inside the guide so they have to comment ${autoDmTrigger}", "whyItConverts": "Simple 1-line reason"},
+      {"triggerType": "3. Casual Snack-Price Drop", "overlayText": "Chill comparison of ${priceDisplay} (instead of ${anchorPriceDisplay}) vs everyday chai/momos/iced coffee—zero pushy sales tone", "whyItConverts": "Simple 1-line reason"},
+      {"triggerType": "4. Bestie-Send & Zero-Doubt Hook", "overlayText": "Honest proof line ('actual links + copy-paste stuff, zero random gyaan') + save/send to bestie + comment ${autoDmTrigger}", "whyItConverts": "Simple 1-line reason"}
     ],
-    "autoDmCaption": "100% Clean, High-Converting Simple English caption about this exact topic asking viewers to comment ${autoDmTrigger} to get the ${priceDisplay} PDF guide",
-    "seoKeywords": ["10 high-search 2026 keywords in clean English specific to this topic"],
+    "autoDmCaption": "100% natural, casual, relatable 2026 Gen-Z Instagram caption (sounds like a real human sharing their private notes, ZERO corporate hype or ad spam!) referencing the actual parts inside the guide, embedding natural search words, and ending with a chill CTA to comment ${autoDmTrigger} for the ${priceDisplay} PDF link",
+    "seoKeywords": ["10 natural 2026 Instagram Search phrases real people actually type for this topic"],
     "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"]
   }
-} (Include 5 complete, deeply detailed, 100% fact-checked chapters in simple human English in "chapters" that 100% fulfill "${effectiveTopic}"!).`;
+} (Include 5 complete, deeply helpful, 100% fact-checked playbook parts in simple Gen-Z human English in "chapters" that 100% fulfill "${effectiveTopic}"!).`;
 
-  const userPrompt = `USER'S EXACT REQUESTED EBOOK SUBJECT: "${effectiveTopic}"
-${hasCustomUserTopic ? `IMPORTANT: Write all 5 chapters 100% about "${effectiveTopic}" using the Grey-Hat Oracle 6-part chapter structure! Verify every math calculation (Unit Rate × Weekly Volume = Weekly Total × 4 weeks = Exact Monthly Total) and use only 100% real URLs and real free tool click-paths! Do NOT write about IndiaMART, kurtis, or voice cloning unless "${effectiveTopic}" asks for it!` : `5-Chapter Blueprint Focus (use these exact verified portals, rules, and pre-verified math formulas!): ${chosenBlueprint.distinctChaptersFocus}`}
+  const userPrompt = `USER'S EXACT REQUESTED TOPIC: "${effectiveTopic}"
+${hasCustomUserTopic ? `IMPORTANT: Write all 5 playbook parts 100% about "${effectiveTopic}" in super-simple, honest, trendy Gen-Z human English! Verify every math calculation (Unit Rate × Weekly Volume = Weekly Total × 4 weeks = Exact Monthly Total) and use only 100% real URLs! ZERO complex technical jargon, ZERO boring textbook tone, ZERO ad copy, ZERO 'coffee cup on organized workspace' clichés! Do NOT write about IndiaMART, kurtis, or voice cloning unless "${effectiveTopic}" asks for it!` : `5-Part Playbook Focus (use these exact verified portals, rules, and pre-verified math formulas!): ${chosenBlueprint.distinctChaptersFocus}`}
 Category: "${category}"
-Reel Caption PDF Offer Price (ONLY for Reel Caption/Overlays, NEVER put this price inside ebook.title or chapters!): ${priceDisplay} (Perceived Value: ${anchorPriceDisplay}) | Auto-DM Trigger: "${autoDmTrigger}"
+Reel Caption PDF Offer Price (ONLY for Reel Caption/Overlays, NEVER put this price inside ebook.title or playbook parts!): ${priceDisplay} (Normal Value: ${anchorPriceDisplay}) | Auto-DM Trigger: "${autoDmTrigger}"
 Unique Generation Nonce: ${variationIndex}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}
-Write a 100% fresh, deeply detailed, human-toned 5-chapter Classified Insider Dossier Ebook in simple English with a polished 100% Pure English Book Title and 100% verified math!`;
+Write a 100% fresh, super-readable, trendy 2026 Gen-Z 5-part Private Playbook + 100% human anti-slop Reel Blueprint!`;
 
   const aiResponse = await callMultiModelLiveAI(
     jsonSchemaPrompt,
@@ -1482,8 +1562,8 @@ Write a 100% fresh, deeply detailed, human-toned 5-chapter Classified Insider Do
   );
   const aiParsed = aiResponse?.parsed || null;
   const providerUsed = aiResponse
-    ? `${aiResponse.providerName} · Grey-Hat Oracle (2026)`
-    : "2026 Grey-Hat Oracle AI";
+    ? `${aiResponse.providerName} · Gen-Z Playbook AI`
+    : "2026 Gen-Z Playbook AI";
 
   if (
     !aiParsed ||
@@ -1518,42 +1598,47 @@ Write a 100% fresh, deeply detailed, human-toned 5-chapter Classified Insider Do
   const normalizedHardestBox = {
     title: stripBrandFromEbookText(
       rawHardestBox?.title ||
-        "🔥 THE HARDEST PART SOLVED: Direct Backdoor Links, High-Approval Rules & Real UI Click-Paths"
+        "The Hardest Part Solved: Exact Links, Hidden Filters & Click-Paths"
     ),
     exactWhereToFindMap:
       rawMapList.length > 0
         ? rawMapList.map((item: any) => stripBrandFromEbookText(String(item)))
         : [
-            `1. Direct Portal / Search Filter #1: Use Google Search operator site:linkedin.com/in OR Google Maps "No-Website" filter to find direct contacts in 5 minutes.`,
-            `2. Active Spender Filter #2: Open facebook.com/ads/library -> Select India -> Search your niche keyword -> Filter by "Active Ads" to find businesses spending money right now.`,
-            `3. Instagram 24-Hr Active Story Filter #3: Search city/niche tags in Instagram "Places" -> tap the circular Story ring to find owners/buyers active in the last 24 hours.`,
-            `4. Trial Reel + Auto-DM Funnel #4: Post a 6-second proof video with "Trial Reel" ON and trigger word "${autoDmTrigger}" so non-followers receive your link automatically.`,
+            `1. Direct Link / Search Filter #1: Use Google Search operator site:linkedin.com/in OR Google Maps "No-Website" filter to find direct contacts in 5 minutes.`,
+            `2. Active Brand Filter #2: Open facebook.com/ads/library -> Select India -> Search your niche keyword -> Filter by "Active Ads" to see who is spending money right now.`,
+            `3. Instagram 24-Hr Active Story Filter #3: Search city/niche tags in Instagram "Places" -> tap the Story ring to find active accounts from the last 24 hours.`,
+            `4. Trial Reel + Auto-DM Funnel #4: Post a 6-second casual clip with "Trial Reel" ON and trigger word "${autoDmTrigger}" so non-followers get your link automatically.`,
           ],
     zeroFollowerTrafficTrick: stripBrandFromEbookText(
       rawHardestBox?.zeroFollowerTrafficTrick ||
         rawHardestBox?.exactMastermindSolution ||
-        "Turn ON Instagram's 2026 'Trial Reel' toggle before posting so 100% of views come from non-followers, and connect Auto-DM so every comment receives your link in 5 seconds."
+        "Turn ON Instagram's 2026 'Trial Reel' toggle before posting so 100% of views go to non-followers, and connect Auto-DM so every comment gets your link in 5 seconds."
     ),
   };
 
-  const exploitStepLabels = [
-    "1️⃣ The Infiltration: ",
-    "2️⃣ The Trigger: ",
-    "3️⃣ The Leverage: ",
-    "4️⃣ The Safety Lock: ",
+  const genzStepLabels = [
+    "1. Setup: ",
+    "2. The Move: ",
+    "3. Scale It: ",
+    "4. Stay Safe: ",
   ];
 
-  const normalizeExploitSteps = (rawSteps: any[]): string[] => {
+  const normalizePlaybookSteps = (rawSteps: any[]): string[] => {
     return rawSteps.map((s, sIdx) => {
-      const cleaned = stripBrandFromEbookText(String(s || "")).trim();
-      if (
-        /^(1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|\d+\.|step\s*\d+)/i.test(cleaned) &&
-        /(infiltration|trigger|leverage|safety)/i.test(cleaned)
-      ) {
+      const cleaned = stripBrandFromEbookText(String(s || ""))
+        .replace(
+          /^(?:1️⃣|2️⃣|3️⃣|4️⃣|5️⃣)?\s*(?:The\s+)?(?:Infiltration|Trigger|Leverage|Safety\s*Lock)\s*[:.-]?\s*/i,
+          ""
+        )
+        .trim();
+      if (/^\d+\.\s*(Setup|The Move|Scale It|Stay Safe)\s*:/i.test(cleaned)) {
         return cleaned;
       }
-      const strippedNum = cleaned.replace(/^(1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|step\s*\d+\s*[:.-]?|\d+\s*[:.)-])\s*/i, "");
-      const prefix = exploitStepLabels[sIdx] || `Step ${sIdx + 1}: `;
+      const strippedNum = cleaned.replace(
+        /^(1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|step\s*\d+\s*[:.-]?|\d+\s*[:.)-])\s*/i,
+        ""
+      );
+      const prefix = genzStepLabels[sIdx] || `${sIdx + 1}. `;
       return `${prefix}${strippedNum}`;
     });
   };
@@ -1569,24 +1654,26 @@ Write a 100% fresh, deeply detailed, human-toned 5-chapter Classified Insider Do
     providerUsed,
     ebook: {
       editionTag:
-        stripBrandFromEbookText(aiParsed.ebook.editionTag) ||
-        "CLASSIFIED 1% INSIDER DOSSIER · GREY-HAT ORACLE EDITION",
+        stripBrandFromEbookText(aiParsed.ebook.editionTag)
+          .replace(/CLASSIFIED\s*1%\s*INSIDER\s*DOSSIER/gi, "PRIVATE 2026 PLAYBOOK")
+          .replace(/GREY-HAT\s*ORACLE\s*EDITION/gi, "NO GATEKEEPING") ||
+        "PRIVATE 2026 PLAYBOOK · NO GATEKEEPING · ZERO FLUFF",
       title: polishedEbookTitle,
       subtitle: stripBrandFromEbookText(
         aiParsed.ebook.subtitle ||
-          "Classified 1% Execution Dossier (With Direct Backdoor Links, Psychological Triggers & Copy-Paste Scripts)"
+          "Private 2026 Playbook — Real links, simple step-by-step moves & copy-paste scripts anyone can use today."
       ),
       targetReaderPromise: stripBrandFromEbookText(
         aiParsed.ebook.targetReaderPromise ||
-          `Actionable 2026 1% insider system for ${polishedEbookTitle}`
+          `Real, simple, zero-fluff breakdown of ${polishedEbookTitle} so you can actually start tonight.`
       ),
       goldenRuleTitle: stripBrandFromEbookText(
         aiParsed.ebook.goldenRuleTitle ||
-          "⚠️ CLASSIFIED BRIEFING: The #1 Grey-Hat Execution & Safety Rule"
+          "Real Talk Before You Start (The #1 Rule)"
       ),
       goldenRuleBody: stripBrandFromEbookText(
         aiParsed.ebook.goldenRuleBody ||
-          "Never waste time on generic 99% advice. Follow the exact Infiltration, Trigger, and Leverage steps in this dossier for 14 straight days."
+          "Skip the crowded generic advice everyone repeats online. Pick one part from this playbook, follow the 4 exact steps cleanly, and stay consistent for 14 days."
       ),
       hardestPartSolvedBox: normalizedHardestBox,
       quickValueBreakdown:
@@ -1596,39 +1683,38 @@ Write a 100% fresh, deeply detailed, human-toned 5-chapter Classified Insider Do
               metric: stripBrandFromEbookText(
                 typeof q === "object" && q?.metric
                   ? String(q.metric)
-                  : `Pillar ${idx + 1}`
+                  : `Quick Point ${idx + 1}`
               ),
               detail: stripBrandFromEbookText(
                 typeof q === "object" && q?.detail
                   ? String(q.detail)
-                  : String(q || `Actionable step for this playbook`)
+                  : String(q || `Simple actionable step inside this playbook`)
               ),
             }))
           : [
               {
                 metric: "1. Daily Time Needed",
-                detail: "45 to 60 minutes from phone or laptop (Zero coding)",
+                detail: "30 to 60 minutes from your phone or laptop (zero coding)",
               },
               {
-                metric: "2. Cost to Start",
-                detail: "₹0 — Uses 100% free 2026 portals, search filters & AI tools",
+                metric: "2. Real Cost to Start",
+                detail: "₹0 — Uses free verified 2026 websites, filters & tools",
               },
               {
                 metric: "3. Hardest Part Solved",
-                detail: "Includes exact search queries, filters & direct portals",
+                detail: "Exact search filters, direct links & real button clicks",
               },
               {
-                metric: "4. Core Outcome",
-                detail: `Master every verified portal in this playbook with step-by-step scripts`,
+                metric: "4. What You Actually Get",
+                detail: `Simple step-by-step moves + ready-to-paste scripts`,
               },
             ],
       chapters: aiParsed.ebook.chapters.map((ch: any, idx: number) => {
         const rawSub = stripBrandFromEbookText(
-          ch.subtitle || `Classified 1% Execution System (Part ${idx + 1})`
-        );
-        const formattedSub = rawSub.includes("WARNING")
-          ? rawSub
-          : `⚠️ WARNING: Keep this strictly confidential. — ${rawSub}`;
+          ch.subtitle || `₹0 to start · simple step-by-step play`
+        )
+          .replace(/^⚠️?\s*WARNING:\s*Keep this strictly confidential\.?\s*[—–-]?\s*/i, "")
+          .trim();
         const rawSteps =
           Array.isArray(ch.stepByStepExecution) &&
           ch.stepByStepExecution.length > 0
@@ -1636,37 +1722,37 @@ Write a 100% fresh, deeply detailed, human-toned 5-chapter Classified Insider Do
             : Array.isArray(ch.actionSteps) && ch.actionSteps.length > 0
             ? ch.actionSteps
             : [
-                `1️⃣ The Infiltration: Open the verified portal listed below for ${effectiveTopic} and set up your clean profile.`,
-                `2️⃣ The Trigger: Apply the exact Grey-Hat search filter and click-path shown above.`,
-                `3️⃣ The Leverage: Use the Jedi Mind-Trick script below to lock in approvals and daily cashflow.`,
+                `1. Setup: Open the verified site listed below for ${effectiveTopic} and set up your clean profile.`,
+                `2. The Move: Use the exact filter and click-path shown above so you skip the crowded queue.`,
+                `3. Scale It: Use the copy-paste script below to get consistent replies and results.`,
               ];
 
         return {
           chapterNumber: Number(ch.chapterNumber) || idx + 1,
           title: stripBrandFromEbookText(
-            (ch.title || `Core Insider System ${idx + 1}`).replace(
-              /^chapter\s*0?\d+\s*[:·.-]\s*/i,
+            (ch.title || `Play 0${idx + 1}`).replace(
+              /^(?:chapter|part|play)\s*0?\d+\s*[:·.-]\s*/i,
               ""
             )
           ),
-          subtitle: formattedSub,
+          subtitle: rawSub || `₹0 to start · takes 20 mins on your phone`,
           coreSecretSummary: stripBrandFromEbookText(
             ch.coreSecretSummary ||
               ch.explanation ||
               ch.secretPrinciple ||
-              `99% of people fail at ${effectiveTopic} because they follow crowded public advice. The 1% reality is using direct, uncrowded portals with exact verification filters.`
+              `Most people get stuck on ${effectiveTopic} because they copy the same crowded YouTube advice. What actually works right now is using direct, uncrowded links and filters.`
           ).replace(
             /^👁️?\s*(?:the\s*99%\s*illusion\s*vs\.?\s*the\s*1%\s*reality\s*[:.\-–—]?)\s*/i,
             ""
           ),
           whereToFindOrHiddenTrick: stripBrandFromEbookText(
             ch.whereToFindOrHiddenTrick ||
-              `Open the verified portal listed below -> apply the exact filter and click-path -> use the Jedi Mind-Trick script to skip 99% of the queue.`
+              `Open the exact site listed below -> apply the clean filter -> use the copy-paste message so you don't get ignored.`
           ).replace(
             /^🎯?\s*(?:the\s*['"‘’“”]?grey[-‑–—\s]?hat['"‘’“”]?\s*mechanism\s*(?:\(the\s*secret\))?\s*[:.\-–—]?)\s*/i,
             ""
           ),
-          stepByStepExecution: normalizeExploitSteps(rawSteps),
+          stepByStepExecution: normalizePlaybookSteps(rawSteps),
           exactToolsOrWebsites:
             Array.isArray(ch.exactToolsOrWebsites) &&
             ch.exactToolsOrWebsites.length > 0
@@ -1674,25 +1760,25 @@ Write a 100% fresh, deeply detailed, human-toned 5-chapter Classified Insider Do
                   name: stripBrandFromEbookText(
                     typeof t === "object" && t?.name
                       ? String(t.name)
-                      : String(t || "2026 Verified Portal")
+                      : String(t || "Verified Site")
                   ),
                   role: stripBrandFromEbookText(
                     typeof t === "object" && t?.role
                       ? String(t.role)
-                      : "Core Execution Portal"
+                      : "Main Free Tool"
                   ),
                   insiderTip: stripBrandFromEbookText(
                     typeof t === "object" && t?.insiderTip
                       ? String(t.insiderTip)
-                      : "Use the exact search filter above for instant results."
+                      : "Use the exact filter above to save hours."
                   ),
                 }))
               : [
                   {
-                    name: "Google Search Operators / NotebookLM / Perplexity",
-                    role: "Direct Discovery & Verification (100% Free)",
+                    name: "Google Search / NotebookLM / Perplexity",
+                    role: "Quick Research & Verification (100% Free)",
                     insiderTip:
-                      "Use exact-match quotes and site: filters to find direct links in 10 seconds.",
+                      "Use quotes around exact phrases to pull direct links in 10 seconds.",
                   },
                 ],
           copyPasteTemplateOrScript:
@@ -1700,25 +1786,26 @@ Write a 100% fresh, deeply detailed, human-toned 5-chapter Classified Insider Do
             ch.copyPasteTemplateOrScript?.content
               ? {
                   label: stripBrandFromEbookText(
-                    ch.copyPasteTemplateOrScript.label ||
-                      "🧠 The Jedi Mind-Trick / Secret Script"
-                  ),
+                    ch.copyPasteTemplateOrScript.label || "Copy-Paste Cheat Sheet"
+                  )
+                    .replace(/^🧠\s*/i, "")
+                    .replace(/The\s+Jedi\s+Mind-?Trick\s*\/?\s*(?:Secret\s*)?/i, "Copy-Paste "),
                   content: stripBrandFromEbookText(
                     String(ch.copyPasteTemplateOrScript.content)
                   ),
                 }
               : {
-                  label: "🧠 The Jedi Mind-Trick / Secret Script",
+                  label: "Copy-Paste Cheat Sheet",
                   content: stripBrandFromEbookText(
                     typeof ch.copyPasteTemplateOrScript === "string"
                       ? ch.copyPasteTemplateOrScript
                       : ch.copyPasteTemplate ||
-                          `Comment "${autoDmTrigger}" below and I will DM you the complete ${effectiveTopic} step-by-step link in 5 seconds!`
+                          `Comment "${autoDmTrigger}" below and I'll DM you the exact ${effectiveTopic} link in 5 seconds!`
                   ),
                 },
           incomeMathOrProof: auditAndFixIncomeMathEquation(
             ch.incomeMathOrProof ||
-              `Gives you an immediate unfair advantage while 99% of your competitors are still stuck guessing.`
+              `Simple, repeatable move that saves you months of guessing while everyone else is still overthinking.`
           ),
         };
       }),
@@ -1729,114 +1816,343 @@ Write a 100% fresh, deeply detailed, human-toned 5-chapter Classified Insider Do
               stripBrandFromEbookText(String(c))
             )
           : [
-              `Apply Filter #1 from the "Hardest Part Solved" Mastermind box today.`,
-              `Test the Chapter 1 & Chapter 2 copy-paste scripts/formulas.`,
-              `Download this 100% white-label 12pt PDF using the Download PDF button.`,
+              `Apply Filter #1 from the "Hardest Part Solved" link map today.`,
+              `Test Play 01 & Play 02 copy-paste scripts/formulas right away.`,
+              `Download this 100% clean 12pt PDF using the Download PDF button.`,
               `Optional: Upload the PDF to SuperProfile.bio at ${priceDisplay} (Value ${anchorPriceDisplay}) with Auto-DM trigger "${autoDmTrigger}".`,
             ],
     },
-    reelBlueprint: {
-      sixSecondVideoIdea: {
-        visualStyle:
-          typeof aiParsed.reelBlueprint?.sixSecondVideoIdea === "object" &&
-          aiParsed.reelBlueprint?.sixSecondVideoIdea?.visualStyle
-            ? String(aiParsed.reelBlueprint.sixSecondVideoIdea.visualStyle)
-            : typeof aiParsed.reelBlueprint?.sixSecondVideoIdea === "string"
-            ? aiParsed.reelBlueprint.sixSecondVideoIdea
-            : "6-Second Dark Aesthetic B-Roll / Laptop & Phone PDF Scroll",
-        shotByShot:
-          Array.isArray(
-            aiParsed.reelBlueprint?.sixSecondVideoIdea?.shotByShot
-          ) &&
-          aiParsed.reelBlueprint.sixSecondVideoIdea.shotByShot.length > 0
-            ? aiParsed.reelBlueprint.sixSecondVideoIdea.shotByShot.map((s: any) =>
-                String(s)
-              )
-            : [
-                `0.0s–2.0s: Slow-motion scroll through the 12pt "${effectiveTopic}" Ebook on phone screen.`,
-                `2.0s–4.0s: Cut to FOMO / snack price-comparison text overlay (${priceDisplay} vs daily Momos/Maggi).`,
-                `4.0s–6.0s: Show Comment "${autoDmTrigger}" CTA box for instant Auto-DM delivery.`,
-              ],
-        lightingAndAudioTip:
-          aiParsed.reelBlueprint?.sixSecondVideoIdea?.lightingAndAudioTip ||
-          "Lower video brightness by -20% in Instagram Edits app so white text pops; enable 2026 Trial Reels.",
-      },
-      psychologicalPriceOverlays:
-        Array.isArray(aiParsed.reelBlueprint?.psychologicalPriceOverlays) &&
-        aiParsed.reelBlueprint.psychologicalPriceOverlays.length > 0
-          ? aiParsed.reelBlueprint.psychologicalPriceOverlays
-              .slice(0, 3)
-              .map((ov: any, idx: number) =>
-                typeof ov === "object" && ov !== null
-                  ? {
-                      triggerType:
-                        ov.triggerType || `Psychological Hook #${idx + 1}`,
-                      overlayText:
-                        ov.overlayText ||
-                        `You spend ${priceDisplay} on snacks in 5 minutes, but this ${priceDisplay} guide gives you the exact 1% links & filters.`,
-                      whyItConverts:
-                        ov.whyItConverts ||
-                        "Makes the price feel smaller than a daily impulse snack.",
-                    }
-                  : {
-                      triggerType: `Psychological Hook #${idx + 1}`,
-                      overlayText: String(ov),
-                      whyItConverts:
-                        "Triggers instant curiosity + impulse micro-purchase.",
-                    }
-              )
-          : [
-              {
-                triggerType: "1. Extreme FOMO / Gatekeeping Hook",
-                overlayText: `99% of people struggle with ${effectiveTopic} because nobody shares the exact search filters & links. I put all 5 inside this ${priceDisplay} guide.`,
-                whyItConverts:
-                  "Triggers intense fear of missing out on hidden insider links.",
-              },
-              {
-                triggerType: "2. Snack Price Comparison",
-                overlayText: `You spend ₹100 on Momos in 10 minutes, but won't invest ${priceDisplay} (Value ${anchorPriceDisplay}) to get the exact step-by-step roadmap?`,
-                whyItConverts:
-                  "Reframes the price as smaller than daily junk food.",
-              },
-              {
-                triggerType: "3. Hardest-Part Solved Hook",
-                overlayText: `Zero "hawa-hawa" theory. Includes the exact websites, filters & copy-paste scripts. Comment "${autoDmTrigger}".`,
-                whyItConverts:
-                  "Directly addresses skepticism and drives comment velocity.",
-              },
-            ],
-      autoDmCaption:
-        aiParsed.reelBlueprint?.autoDmCaption ||
-        `Stop wasting time on generic videos that only give surface-level advice and hide the real links. 🛑\n\nI put the complete, zero-fluff "${effectiveTopic}" blueprint—including the exact websites, search filters, and copy-paste scripts—into a clean 12pt guide for just ${priceDisplay} (Value ${anchorPriceDisplay}).\n\n👉 Comment "${autoDmTrigger}" below and my Auto-DM will send the direct link to your inbox in 5 seconds!`,
-      seoKeywords:
-        Array.isArray(aiParsed.reelBlueprint?.seoKeywords) &&
-        aiParsed.reelBlueprint.seoKeywords.length > 0
-          ? aiParsed.reelBlueprint.seoKeywords.slice(0, 10)
-          : [
-              effectiveTopic.toLowerCase().slice(0, 28),
-              "free verified certificates 2026",
-              "how to find clients without followers",
-              "secret ai tools india 2026",
-              "digital products india",
-              "career shortcuts india",
-            ],
-      // Strictly enforce the 2026 5-Hashtag Limit!
-      hashtags:
-        Array.isArray(aiParsed.reelBlueprint?.hashtags) &&
-        aiParsed.reelBlueprint.hashtags.length > 0
-          ? aiParsed.reelBlueprint.hashtags.slice(0, 5)
-          : [
-              "#secretwebsites",
-              "#careergrowth2026",
-              "#freecertificates",
-              "#clienthunting",
-              "#digitalproductsindia",
-            ],
-    },
+    reelBlueprint: (() => {
+      const chTitles = aiParsed.ebook.chapters.map((c: any) =>
+        stripBrandFromEbookText(String(c?.title || ""))
+      );
+      const fallbackReel = buildRotatingEbookReelSectionFallback({
+        ebookTitle: polishedEbookTitle,
+        chapterTitles: chTitles,
+        priceDisplay,
+        anchorPriceDisplay,
+        autoDmTrigger,
+        section: "all",
+        variationIndex: Number(variationIndex) || 0,
+      }) as EbookGenerationResult["reelBlueprint"];
+
+      const rawPrompts = aiParsed.reelBlueprint?.aiVideoPrompts;
+      const aiVideoPrompts = {
+        rawPhoneFirstFramePrompt:
+          rawPrompts?.rawPhoneFirstFramePrompt &&
+          String(rawPrompts.rawPhoneFirstFramePrompt).trim().length > 40
+            ? String(rawPrompts.rawPhoneFirstFramePrompt).trim()
+            : fallbackReel.aiVideoPrompts!.rawPhoneFirstFramePrompt,
+        zeroSlopVideoMotionPrompt:
+          rawPrompts?.zeroSlopVideoMotionPrompt &&
+          String(rawPrompts.zeroSlopVideoMotionPrompt).trim().length > 40
+            ? String(rawPrompts.zeroSlopVideoMotionPrompt).trim()
+            : fallbackReel.aiVideoPrompts!.zeroSlopVideoMotionPrompt,
+        relatablePovBrollPrompt:
+          rawPrompts?.relatablePovBrollPrompt &&
+          String(rawPrompts.relatablePovBrollPrompt).trim().length > 40
+            ? String(rawPrompts.relatablePovBrollPrompt).trim()
+            : fallbackReel.aiVideoPrompts!.relatablePovBrollPrompt,
+        algorithmTriggerNote:
+          rawPrompts?.algorithmTriggerNote &&
+          String(rawPrompts.algorithmTriggerNote).trim().length > 20
+            ? String(rawPrompts.algorithmTriggerNote).trim()
+            : fallbackReel.aiVideoPrompts!.algorithmTriggerNote,
+      };
+
+      return {
+        aiVideoPrompts,
+        sixSecondVideoIdea: {
+          visualStyle:
+            typeof aiParsed.reelBlueprint?.sixSecondVideoIdea === "object" &&
+            aiParsed.reelBlueprint?.sixSecondVideoIdea?.visualStyle
+              ? String(aiParsed.reelBlueprint.sixSecondVideoIdea.visualStyle)
+              : typeof aiParsed.reelBlueprint?.sixSecondVideoIdea === "string"
+              ? aiParsed.reelBlueprint.sixSecondVideoIdea
+              : fallbackReel.sixSecondVideoIdea.visualStyle,
+          shotByShot:
+            Array.isArray(
+              aiParsed.reelBlueprint?.sixSecondVideoIdea?.shotByShot
+            ) &&
+            aiParsed.reelBlueprint.sixSecondVideoIdea.shotByShot.length > 0
+              ? aiParsed.reelBlueprint.sixSecondVideoIdea.shotByShot.map(
+                  (s: any) => String(s)
+                )
+              : fallbackReel.sixSecondVideoIdea.shotByShot,
+          lightingAndAudioTip:
+            aiParsed.reelBlueprint?.sixSecondVideoIdea?.lightingAndAudioTip ||
+            fallbackReel.sixSecondVideoIdea.lightingAndAudioTip,
+        },
+        psychologicalPriceOverlays:
+          Array.isArray(aiParsed.reelBlueprint?.psychologicalPriceOverlays) &&
+          aiParsed.reelBlueprint.psychologicalPriceOverlays.length > 0
+            ? aiParsed.reelBlueprint.psychologicalPriceOverlays
+                .slice(0, 4)
+                .map((ov: any, idx: number) =>
+                  typeof ov === "object" && ov !== null
+                    ? {
+                        triggerType:
+                          ov.triggerType || `Psychological Hook #${idx + 1}`,
+                        overlayText:
+                          ov.overlayText ||
+                          fallbackReel.psychologicalPriceOverlays[
+                            idx % fallbackReel.psychologicalPriceOverlays.length
+                          ].overlayText,
+                        whyItConverts:
+                          ov.whyItConverts ||
+                          "Triggers relatable curiosity, saves, and impulse DM comments.",
+                      }
+                    : {
+                        triggerType: `Psychological Hook #${idx + 1}`,
+                        overlayText: String(ov),
+                        whyItConverts:
+                          "Triggers relatable curiosity + impulse DM comment.",
+                      }
+                )
+            : fallbackReel.psychologicalPriceOverlays,
+        autoDmCaption:
+          aiParsed.reelBlueprint?.autoDmCaption || fallbackReel.autoDmCaption,
+        seoKeywords:
+          Array.isArray(aiParsed.reelBlueprint?.seoKeywords) &&
+          aiParsed.reelBlueprint.seoKeywords.length > 0
+            ? aiParsed.reelBlueprint.seoKeywords.slice(0, 10)
+            : fallbackReel.seoKeywords,
+        // Strictly enforce the 2026 5-Hashtag Limit!
+        hashtags:
+          Array.isArray(aiParsed.reelBlueprint?.hashtags) &&
+          aiParsed.reelBlueprint.hashtags.length > 0
+            ? aiParsed.reelBlueprint.hashtags.slice(0, 5)
+            : fallbackReel.hashtags,
+      };
+    })(),
   };
 
   return res.json(result);
 });
+
+// ============================================================================
+// ENDPOINT 2B: PER-SECTION EBOOK REEL & ANTI-SLOP AI VIDEO PROMPT REGENERATOR
+// ============================================================================
+app.post("/api/regenerate-ebook-reel-section", async (req, res) => {
+  const {
+    ebookTitle = "2026 Insider Playbook",
+    ebookSubtitle = "",
+    chapterTitles = [],
+    priceDisplay = "₹29",
+    anchorPriceDisplay = "₹1,999",
+    autoDmTrigger = "SECRET",
+    section = "all",
+    previousContent = "",
+    variationIndex = 1,
+  } = req.body || {};
+
+  const validSections: EbookReelSectionKey[] = [
+    "all",
+    "prompts",
+    "videoPlan",
+    "overlays",
+    "caption",
+    "tags",
+  ];
+  const targetSection: EbookReelSectionKey = validSections.includes(section)
+    ? section
+    : "all";
+
+  const cleanChapters = Array.isArray(chapterTitles)
+    ? chapterTitles.map((c: any) => String(c || "").trim()).filter(Boolean)
+    : [];
+
+  const fallbackPartial = buildRotatingEbookReelSectionFallback({
+    ebookTitle: String(ebookTitle),
+    chapterTitles: cleanChapters,
+    priceDisplay: String(priceDisplay),
+    anchorPriceDisplay: String(anchorPriceDisplay),
+    autoDmTrigger: String(autoDmTrigger),
+    section: targetSection,
+    variationIndex: Number(variationIndex) || 1,
+  });
+
+  const psychAngles = [
+    "Casual Bestie Tea-Spill ('honestly mad nobody told me this 6 months ago, not gatekeeping anymore')",
+    "Anti-Guru Real Talk ('people literally charge ₹5,000 in webinars for these 5 basic links lol')",
+    "Mid-Task Getting-Ready / Everyday Relatable Drop ('me putting on lip balm / boiling chai while dropping the notes that saved my month')",
+    "Late-Night Messy-Bed Quiet Realization ('saving 100 motivation reels at 1am and still not knowing step 1')",
+    "Auto / Metro Window Golden-Hour Reflection ('the quiet little notes I wish I had before starting 2026')",
+    "Raw Notes-App Blurred Spoiler ('literally screenshotted my own private notes so you don't waste weeks')",
+  ];
+  const chosenAngle =
+    psychAngles[Math.abs(Number(variationIndex) || 0) % psychAngles.length];
+
+  const sectionSchemaInstructions: Record<EbookReelSectionKey, string> = {
+    prompts: `Return STRICT JSON with ONLY key "aiVideoPrompts": {
+      "rawPhoneFirstFramePrompt": "9:16 raw candid unedited iPhone 15 Pro first-frame photo prompt (ChatGPT Image / Midjourney / Ideogram) depicting a REAL everyday 2026 Indian Gen-Z moment (e.g., messy hostel bed with phone & soft lamp, balcony/terrace golden hour, boiling chai/Maggi in a normal kitchen, auto/metro window ride, or mirror getting-ready frame — NEVER a generic 'clean organized workspace' or 'coffee cup next to laptop'!). Natural phone grain, upper-middle 35% clean space for text overlay, ZERO neon cyber glow, ZERO plastic CGI skin, ZERO garbled screen text.",
+      "zeroSlopVideoMotionPrompt": "6-second 9:16 raw handheld phone video motion prompt (Kling / Veo / Runway / Flow AI) with natural human breathing micro-shake and real everyday movement (tying hair, scrolling phone in bed, flipping a real spiral notebook, sipping chai by window)—100% indistinguishable from an unedited friend's Instagram story, zero ad polish, zero morphing.",
+      "relatablePovBrollPrompt": "6-second deeply relatable 9:16 Gen-Z everyday POV clip capturing quiet late-night or evening relief (zero commercial energy, looks 100% like real life).",
+      "algorithmTriggerNote": "1–2 plain-English sentences explaining why viewers don't sense an ad and why this triggers 2026 Instagram loops, saves, bestie-sends, and comments."
+    }`,
+    videoPlan: `Return STRICT JSON with ONLY key "sixSecondVideoIdea": {
+      "visualStyle": "Specific, trendy 2026 Gen-Z casual phone-shot Reel vibe (e.g., 'Tying hair / lip balm casual mirror drop', 'Messy bed 1am Notes app scroll', 'Auto window sunset POV', 'Boiling chai casual kitchen clip' — STRICTLY BAN 'clean organized workspace', 'coffee cup on desk', 'insider-leak aesthetic', and 'No AI robot voices'!)",
+      "shotByShot": [
+        "0.0s–2.0s: Real casual everyday clip (NEVER 'Close up of computer screen showing [topic]'!) + short natural lowercase hook line...",
+        "2.0s–4.5s: Quick raw phone-screen scroll showing blurred Notes/PDF pages with 1 real juicy line peeking out...",
+        "4.5s–6.0s: Chill relatable wrap-up frame + effortless human CTA to comment ${autoDmTrigger} for the ${priceDisplay} guide (NEVER 'Stop X, start Y'!)"
+      ],
+      "lightingAndAudioTip": "Simple, practical 2026 Instagram Edits + soft trending sound + Trial Reel tip in plain human English"
+    }`,
+    overlays: `Return STRICT JSON with ONLY key "psychologicalPriceOverlays": [
+      {"triggerType": "1. Relatable Real-Talk Hook", "overlayText": "Short, super-real Gen-Z line in simple everyday English mirroring their exact quiet stress/need (NO 'Tired of wasting time...', NO corporate words!)", "whyItConverts": "Simple 1-line reason"},
+      {"triggerType": "2. No-Gatekeeping Curiosity Hook", "overlayText": "Casual bestie spilling-tea line naming a real detail from the guide so they have to comment ${autoDmTrigger}", "whyItConverts": "Simple 1-line reason"},
+      {"triggerType": "3. Chill Snack-Price Drop", "overlayText": "Natural, zero-pressure comparison of ${priceDisplay} (instead of ${anchorPriceDisplay}) vs momos/chai/iced coffee", "whyItConverts": "Simple 1-line reason"},
+      {"triggerType": "4. Bestie-Send & Zero-Doubt Hook", "overlayText": "Blunt honest proof ('real links + exact scripts, zero boring gyaan') + save/send to a friend + comment ${autoDmTrigger}", "whyItConverts": "Simple 1-line reason"}
+    ]`,
+    caption: `Return STRICT JSON with ONLY key "autoDmCaption": "A 100% real, warm, slightly blunt 2026 Gen-Z Instagram Reel caption (sounds like a smart friend sharing their private notes, ZERO corporate hype, ZERO 'Unlock your potential' or 'No fluff just...' ad templates!) referencing the actual parts inside the guide, framing ${priceDisplay} (vs ${anchorPriceDisplay}) casually, embedding natural Instagram search phrases, and ending with a chill CTA to comment ${autoDmTrigger}."`,
+    tags: `Return STRICT JSON with ONLY keys:
+      "seoKeywords": ["10 natural 2026 Instagram Search phrases real people actually type when searching this topic"],
+      "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"] (STRICTLY 5 natural, niche lowercase hashtags per 2026 Instagram rule!)`,
+    all: `Return STRICT JSON with ALL keys: "aiVideoPrompts" (rawPhoneFirstFramePrompt, zeroSlopVideoMotionPrompt, relatablePovBrollPrompt, algorithmTriggerNote), "sixSecondVideoIdea" (visualStyle, shotByShot [3 items], lightingAndAudioTip), "psychologicalPriceOverlays" (4 objects with triggerType, overlayText, whyItConverts), "autoDmCaption" (string), "seoKeywords" (10 strings), "hashtags" (strictly 5 strings).`,
+  };
+
+  const systemPrompt = `You are a real 22-year-old viral Indian Gen-Z Instagram Reels creator who actually gets 500K+ organic views and sells micro-priced PDFs effortlessly because your Reels look and sound 100% REAL—NEVER like an AI or a boring ad.
+
+STRICT ANTI-AI-SLOP & ZERO-JARGON RULES (BREAK EVEN 1 RULE = FAILURE):
+1. BANNED WORDS & CLICHÉS (NEVER WRITE ANY OF THESE!):
+   - BANNED JARGON: "geographic nodes", "strategic time", "workspace", "networking hubs", "arbitrage", "ecosystem", "infiltration", "leverage", "paradigm", "synergy", "unlock", "elevate", "game-changer", "delve", "classified dossier", "insider-leak aesthetic", "No AI robot voices", "loaded weapon", "elites", "conversion funnel", "optimize".
+   - BANNED AD LINES: "Tired of wasting time...", "Stop [X], start [Y]", "No fluff, just...", "Want to level up?", "Hand moving to a coffee cup, showing a clean, organized workspace", "Close up of a computer screen showing [topic]".
+2. LOOK AT BAD (AI SLOP) VS GOOD (100% REAL GEN-Z HUMAN):
+   - BAD Overlay: "Tired of wasting time on apps? The real secret is in the geographic nodes. No money needed. Just 2 hours of strategic time. Comment SECRET."
+   - GOOD Overlay: "honestly mad nobody told me this earlier 😭 wasted months doing it the hard way when the actual shortcut takes 20 mins — put all the links + exact steps in a ${priceDisplay} pdf, comment ${autoDmTrigger}"
+   - BAD Video Idea: "0.0s-2.0s: Close up of computer screen showing 'Networking Hubs'. 2.0s-4.5s: Hand moving to coffee cup on clean organized workspace. 4.5s-6.0s: Text: Stop dating, start networking."
+   - GOOD Video Idea: "0.0s-2.0s: Raw front-camera clip of you tying your hair up / putting on lip balm / stirring chai on a normal evening (zero studio lighting, looks like a bestie's story). 2.0s-4.5s: Quick raw screen scroll of your Notes/PDF pages with 1 real juicy step highlighted and the rest blurred. 4.5s-6.0s: Chill cut back to you sipping chai while the short text stays on screen so people read twice and drop ${autoDmTrigger}."
+3. USE SIMPLE EVERYDAY ENGLISH (8th-grade vocabulary):
+   - Short, punchy, conversational lines. Lowercase/casual Gen-Z vibe where natural. Zero dramatic hype, zero complex technical words, zero fake urgency.
+4. REAL PSYCHOLOGY THAT MAKES PEOPLE COMMENT "${autoDmTrigger}" WITHOUT FEELING SOLD TO:
+   - Hit quiet real-life frustration, anti-gatekeeping ("people charge ₹5,000 for this lol"), specific curiosity about what's inside the guide, effortless snack-price feel (${priceDisplay} vs ${anchorPriceDisplay}), and best-friend shareability.
+5. STRICT ANTI-REPETITION: Use this fresh angle (${chosenAngle}) and make it 100% different from the previous version. Never mention "GlowCash".
+
+${sectionSchemaInstructions[targetSection]}`;
+
+  const userPrompt = `PLAYBOOK TITLE: "${ebookTitle}"
+PLAYBOOK SUBTITLE: "${ebookSubtitle}"
+WHAT'S INSIDE THIS PDF:
+${cleanChapters.map((c, i) => `${i + 1}. ${c}`).join("\n") || "5 Real Actionable Plays with Exact Links & Copy-Paste Scripts"}
+OFFER PRICE: ${priceDisplay} (Normal Value: ${anchorPriceDisplay})
+AUTO-DM COMMENT WORD: "${autoDmTrigger}"
+FRESH GEN-Z ANGLE TO USE: ${chosenAngle}
+${previousContent ? `DO NOT REPEAT THIS PREVIOUS OUTPUT (WRITE SOMETHING 100% FRESH & HUMAN):\n${String(previousContent).slice(0, 900)}` : ""}
+VARIATION NONCE: ${variationIndex}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+  const aiResp = await callMultiModelLiveAI(
+    systemPrompt,
+    userPrompt,
+    Number(variationIndex) || 1
+  );
+  const parsed = aiResp?.parsed || null;
+
+  let finalData: Partial<EbookGenerationResult["reelBlueprint"]> = {
+    ...fallbackPartial,
+  };
+
+  if (parsed && typeof parsed === "object") {
+    if (
+      (targetSection === "prompts" || targetSection === "all") &&
+      parsed.aiVideoPrompts
+    ) {
+      finalData.aiVideoPrompts = {
+        rawPhoneFirstFramePrompt:
+          String(parsed.aiVideoPrompts.rawPhoneFirstFramePrompt || "").trim() ||
+          fallbackPartial.aiVideoPrompts!.rawPhoneFirstFramePrompt,
+        zeroSlopVideoMotionPrompt:
+          String(parsed.aiVideoPrompts.zeroSlopVideoMotionPrompt || "").trim() ||
+          fallbackPartial.aiVideoPrompts!.zeroSlopVideoMotionPrompt,
+        relatablePovBrollPrompt:
+          String(parsed.aiVideoPrompts.relatablePovBrollPrompt || "").trim() ||
+          fallbackPartial.aiVideoPrompts!.relatablePovBrollPrompt,
+        algorithmTriggerNote:
+          String(parsed.aiVideoPrompts.algorithmTriggerNote || "").trim() ||
+          fallbackPartial.aiVideoPrompts!.algorithmTriggerNote,
+      };
+    }
+
+    if (
+      (targetSection === "videoPlan" || targetSection === "all") &&
+      parsed.sixSecondVideoIdea
+    ) {
+      finalData.sixSecondVideoIdea = {
+        visualStyle:
+          String(parsed.sixSecondVideoIdea.visualStyle || "").trim() ||
+          fallbackPartial.sixSecondVideoIdea!.visualStyle,
+        shotByShot:
+          Array.isArray(parsed.sixSecondVideoIdea.shotByShot) &&
+          parsed.sixSecondVideoIdea.shotByShot.length > 0
+            ? parsed.sixSecondVideoIdea.shotByShot.map(String)
+            : fallbackPartial.sixSecondVideoIdea!.shotByShot,
+        lightingAndAudioTip:
+          String(parsed.sixSecondVideoIdea.lightingAndAudioTip || "").trim() ||
+          fallbackPartial.sixSecondVideoIdea!.lightingAndAudioTip,
+      };
+    }
+
+    if (
+      (targetSection === "overlays" || targetSection === "all") &&
+      Array.isArray(parsed.psychologicalPriceOverlays) &&
+      parsed.psychologicalPriceOverlays.length > 0
+    ) {
+      const cleanedOverlays = parsed.psychologicalPriceOverlays
+        .slice(0, 4)
+        .map((ov: any, idx: number) => ({
+          triggerType:
+            String(ov?.triggerType || `Psychological Hook #${idx + 1}`).trim(),
+          overlayText: String(ov?.overlayText || ov || "").trim(),
+          whyItConverts: String(
+            ov?.whyItConverts ||
+              "Triggers relatable curiosity, high rewatch time, and instant DM comments."
+          ).trim(),
+        }))
+        .filter((o: any) => o.overlayText.length > 10);
+      finalData.psychologicalPriceOverlays =
+        cleanedOverlays.length > 0
+          ? cleanedOverlays
+          : fallbackPartial.psychologicalPriceOverlays;
+    }
+
+    if (
+      (targetSection === "caption" || targetSection === "all") &&
+      typeof parsed.autoDmCaption === "string" &&
+      parsed.autoDmCaption.trim().length > 30
+    ) {
+      finalData.autoDmCaption = parsed.autoDmCaption
+        .replace(/GlowCash/gi, "Insider")
+        .trim();
+    }
+
+    if (targetSection === "tags" || targetSection === "all") {
+      if (Array.isArray(parsed.seoKeywords) && parsed.seoKeywords.length > 0) {
+        finalData.seoKeywords = parsed.seoKeywords
+          .slice(0, 10)
+          .map((k: any) => String(k || "").trim())
+          .filter(Boolean);
+      }
+      if (Array.isArray(parsed.hashtags) && parsed.hashtags.length > 0) {
+        finalData.hashtags = parsed.hashtags
+          .slice(0, 5)
+          .map((h: any) => {
+            const clean = String(h || "").trim().replace(/\s+/g, "");
+            return clean.startsWith("#") ? clean.toLowerCase() : `#${clean.toLowerCase()}`;
+          })
+          .filter((h: string) => h.length > 1);
+      }
+    }
+  }
+
+  return res.json({
+    section: targetSection,
+    data: finalData,
+    providerUsed: aiResp
+      ? `${aiResp.providerName} · Anti-Slop Viral Reel AI`
+      : "2026 Anti-Slop Viral Reel Engine",
+  });
+});
+
 
 // POST /api/stylist-chat-rebuild — Multimodal AI Stylist Chat for Similar Meesho Finds & Colors (100x Royal Glow-Up, Zero Joker/Kiddy Look)
 app.post("/api/stylist-chat-rebuild", async (req, res) => {
@@ -1962,7 +2278,7 @@ Return strictly valid JSON with this exact structure:
   let aiParsed: any = null;
   let providerUsed = `100x Royal Glow-Up AI Stylist (${dailyCtx.formattedDate})`;
 
-  // 2. Try Multimodal Gemini (gemini-4-hydrogen) first if GEMINI_API_KEY is available
+  // 2. Try Multimodal Gemini (gemini-4-hydrogen -> gemini-3.1-flash-lite) using server-side GEMINI_API_KEY
   try {
     const ai = getGeminiClient();
     if (ai) {
@@ -1984,100 +2300,67 @@ Return strictly valid JSON with this exact structure:
         text: `${stylistSystemPrompt}\n\nAnalyze the user's found items/colors/screenshots and return the JSON response now.`,
       });
 
-      const response = await withTimeout(
-        ai.models.generateContent({
+      const visionModels = [
+        {
+          model: "gemini-3.1-flash-lite",
+          label: `Gemini 3.1 Flash Lite Vision Stylist (${dailyCtx.formattedDate})`,
+          thinkingLevel: ThinkingLevel.MINIMAL,
+          timeoutMs: 24000,
+        },
+        {
           model: "gemini-4-hydrogen",
-          contents: { parts },
-          config: {
-            responseMimeType: "application/json",
-            thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-          },
-        }),
-        12000,
-        "Gemini 4 Hydrogen Multimodal Stylist"
-      );
+          label: `Gemini 4 Hydrogen Vision Stylist (${dailyCtx.formattedDate})`,
+          thinkingLevel: ThinkingLevel.LOW,
+          timeoutMs: 30000,
+        },
+      ];
 
-      if (response.text) {
-        aiParsed = JSON.parse(response.text.trim());
-        providerUsed = `Gemini 4 Hydrogen Vision Stylist (${dailyCtx.formattedDate})`;
+      for (const candidate of visionModels) {
+        try {
+          const response = await withTimeout(
+            ai.models.generateContent({
+              model: candidate.model,
+              contents: { parts },
+              config: {
+                responseMimeType: "application/json",
+                thinkingConfig: { thinkingLevel: candidate.thinkingLevel },
+              },
+            }),
+            candidate.timeoutMs,
+            candidate.label
+          );
+
+          if (response.text) {
+            aiParsed = extractJSONObject(response.text);
+            providerUsed = candidate.label;
+            break;
+          }
+        } catch (err: any) {
+          console.error(
+            `[Stylist AI] ${candidate.model} failed:`,
+            err?.message?.slice(0, 200) || err
+          );
+        }
       }
     }
   } catch {
-    // Fall through to Groq
+    // Handled by optional fallback below
   }
 
-  // 3. Try Groq Vision (Llama 4 Scout) or GPT-OSS 120B if Gemini wasn't used
-  if (!aiParsed && GROQ_FALLBACK_KEY) {
-    if (safeImages.length > 0) {
-      try {
-        const userContentParts: any[] = [
-          {
-            type: "text",
-            text: `${stylistSystemPrompt}\n\nInspect the attached Meesho clothing screenshots and return strictly valid JSON.`,
-          },
-        ];
-        for (const img of safeImages.slice(0, 3)) {
-          if (img.dataUrl && img.dataUrl.startsWith("data:image/")) {
-            userContentParts.push({
-              type: "image_url",
-              image_url: { url: img.dataUrl },
-            });
-          }
-        }
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12000);
-        try {
-          const visionRes = await fetch(
-            "https://api.groq.com/openai/v1/chat/completions",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${GROQ_FALLBACK_KEY}`,
-              },
-              body: JSON.stringify({
-                model: "meta-llama/llama-4-scout-17b-16e-instruct",
-                temperature: 0.75,
-                messages: [{ role: "user", content: userContentParts }],
-                response_format: { type: "json_object" },
-              }),
-              signal: controller.signal,
-            }
-          );
-          if (visionRes.ok) {
-            const visionData = await visionRes.json();
-            const rawContent =
-              visionData?.choices?.[0]?.message?.content || "{}";
-            const cleaned = rawContent
-              .replace(/^```json\s*/i, "")
-              .replace(/^```\s*/i, "")
-              .replace(/\s*```$/, "")
-              .trim();
-            aiParsed = JSON.parse(cleaned);
-            providerUsed = `Llama-4 Vision + 100x Royal Stylist AI (${dailyCtx.formattedDate})`;
-          }
-        } finally {
-          clearTimeout(timeout);
-        }
-      } catch {
-        // Fall through to GPT-OSS 120B
-      }
-    }
-
-    if (!aiParsed) {
-      try {
-        aiParsed = await callOpenAICompatibleJSON(
-          "https://api.groq.com/openai/v1/chat/completions",
-          GROQ_FALLBACK_KEY,
-          "openai/gpt-oss-120b",
-          stylistSystemPrompt,
-          `User Found Items/Colors: "${userMessage}" | Selected Colors: "${safeColors.join(", ")}" | Screenshot Colors: "${imageDescriptions}" | Goal: "${bodyGoal}"`,
-          11000
-        );
-        providerUsed = `GPT-OSS 120B Royal Stylist AI (${dailyCtx.formattedDate})`;
-      } catch {
-        // Fall through to baseline
-      }
+  // 3. Optional Groq env fallback only if explicitly configured
+  if (!aiParsed && GROQ_ENV_KEY) {
+    try {
+      aiParsed = await callOpenAICompatibleJSON(
+        "https://api.groq.com/openai/v1/chat/completions",
+        GROQ_ENV_KEY,
+        "openai/gpt-oss-120b",
+        stylistSystemPrompt,
+        `User Found Items/Colors: "${userMessage}" | Selected Colors: "${safeColors.join(", ")}" | Screenshot Colors: "${imageDescriptions}" | Goal: "${bodyGoal}"`,
+        18000
+      );
+      providerUsed = `Groq Live Royal Stylist AI (${dailyCtx.formattedDate})`;
+    } catch {
+      // Fall through to baseline
     }
   }
 
@@ -2250,8 +2533,14 @@ async function startServer() {
 
   if (!isProduction) {
     const { createServer: createViteServer } = await import("vite");
+    const disableHmr = process.env.DISABLE_HMR === "true";
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: !disableHmr,
+        ws: disableHmr ? false : undefined,
+        watch: disableHmr ? null : undefined,
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);
@@ -2267,4 +2556,7 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
+});

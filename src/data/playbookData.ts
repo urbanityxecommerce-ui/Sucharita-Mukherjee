@@ -78,6 +78,21 @@ export interface EbookChapter {
   incomeMathOrProof: string;
 }
 
+export interface EbookAntiSlopVideoPrompts {
+  rawPhoneFirstFramePrompt: string;
+  zeroSlopVideoMotionPrompt: string;
+  relatablePovBrollPrompt: string;
+  algorithmTriggerNote: string;
+}
+
+export type EbookReelSectionKey =
+  | 'all'
+  | 'prompts'
+  | 'videoPlan'
+  | 'overlays'
+  | 'caption'
+  | 'tags';
+
 export interface EbookGenerationResult {
   id: string;
   createdAt: string;
@@ -107,6 +122,7 @@ export interface EbookGenerationResult {
     twentyFourHourChecklist: string[];
   };
   reelBlueprint: {
+    aiVideoPrompts?: EbookAntiSlopVideoPrompts;
     sixSecondVideoIdea: {
       visualStyle: string;
       shotByShot: string[];
@@ -2064,6 +2080,407 @@ export function synthesizeCustomSimilarOutfitReelPack(
     updatedReelPack,
   };
 }
+
+// ============================================================================
+// ZERO-SLOP GEN-Z EBOOK AI VIDEO PROMPTS & REAL-HUMAN REEL BUILDERS
+// ============================================================================
+
+const ANTI_SLOP_SCENES = [
+  {
+    name: "Messy Hostel Bed & 1 AM Phone Scroll POV",
+    mood: "1am real-talk voice-note vibe",
+    setting:
+      "a real slightly messy Indian hostel/bedroom bed at 1 AM with a crumpled cotton bedsheet, warm yellow fairy lights on the wall behind, a phone charger cable draped over the pillow, and a matte smartphone held casually in one hand",
+    camera:
+      "raw unedited iPhone 15 Pro vertical 9:16 selfie-POV angle, authentic low-light ISO 800 phone grain, slight off-center handheld tilt, zero studio polish",
+    motion:
+      "subtle natural handheld phone sway as a real brown-skinned Indian hand scrolls casually through clean dark-mode notes on screen, soft warm wall light flickering slightly, seamless 6-second loop",
+    brollAction:
+      "relatable late-night POV sitting cross-legged on a cotton bedsheet closing 10 confusing browser tabs, sighing with quiet relief, and opening one clean private notes page on a phone under soft lamp light",
+    algoNote:
+      "Looks 100% like a real late-night story from a friend—not an ad. Viewers immediately recognize their own 1 AM room vibe, pause to read your short text twice (2.5x loop), save it, and comment your word.",
+  },
+  {
+    name: "Evening Chai / Maggi Kitchen Casual Drop",
+    mood: "bestie spilling tea mid-task",
+    setting:
+      "a normal Indian home kitchen counter at 6:30 PM with a steel saucepan of masala chai simmering gently on the gas stove, warm yellow overhead tubelight mixed with soft dusk window light, stainless steel cup waiting beside a phone leaned against a spice jar",
+    camera:
+      "candid 9:16 front-camera smartphone clip at 30fps, slightly imperfect everyday home lighting, natural handheld movement, real documentary creator feel",
+    motion:
+      "natural faceless hand pours hot chai into a simple ceramic cup while glancing casually down at a phone showing a clean softly blurred checklist, light steam rising naturally, zero synthetic gloss",
+    brollAction:
+      "everyday evening POV stirring boiling chai/Maggi with one hand while the other hand taps open a clean 5-part cheat-sheet on a phone screen—zero corporate energy, 100% real Indian home vibe",
+    algoNote:
+      "Mid-task everyday clips (making chai/Maggi) have the lowest skip rate on 2026 Instagram because viewers' brains never flag them as ads—they stay hooked to read the whole overlay and drop a comment.",
+  },
+  {
+    name: "Auto / Metro Window Golden-Hour Reflection",
+    mood: "quiet main-character commute thought",
+    setting:
+      "looking out the side window of a moving Indian metro or auto-rickshaw at 5:45 PM golden hour, warm orange sunlight catching wired earphones and a smartphone held casually in the lap, blurred city trees and streetlights passing outside",
+    camera:
+      "raw 9:16 handheld phone clip, natural window glare and warm lens flare, organic vehicle micro-vibration, authentic Kodak-like unedited phone colors",
+    motion:
+      "camera rests gently near the window as city lights drift past, then tilts naturally down to a thumb swiping through a clean mobile PDF page with softly blurred bullet points, zero AI morphing",
+    brollAction:
+      "quiet commute POV with wired earphones on, watching sunset clouds through a metro/auto window while opening a saved private guide on your phone—calm, nostalgic, super relatable Gen-Z energy",
+    algoNote:
+      "Golden-hour commute visuals trigger instant saves and bestie-sends ('literally us after college/work'), pushing your Reel straight into non-follower Trial Reel feeds.",
+  },
+  {
+    name: "Terrace / Balcony Breeze Evening POV",
+    mood: "chill sunset friend advice",
+    setting:
+      "an Indian apartment balcony or rooftop terrace right before sunset, soft pink-orange sky above neighboring rooftops, a steel railing with a small potted plant, a spiral notebook resting on the ledge beside a smartphone",
+    camera:
+      "candid 9:16 iPhone vertical framing, natural warm breeze moving notebook pages slightly, authentic outdoor evening dynamic range, zero artificial rim lighting",
+    motion:
+      "subtle handheld breeze sway as real fingers hold down a fluttering notebook page and tap a clean phone screen beside it, real paper texture and soft shadows, crisp 6-second loop",
+    brollAction:
+      "quiet evening terrace POV flipping through two handwritten cheat-sheet pages while city dusk lights turn on in the distance—feels like a smart older sibling giving honest advice",
+    algoNote:
+      "Terrace sunset clips feel warm, authentic, and completely unscripted—killing scam skepticism immediately so viewers feel comfortable commenting for your guide.",
+  },
+  {
+    name: "Getting-Ready / Lip-Balm Casual Mirror Half-Frame",
+    mood: "unbothered bestie sharing a shortcut",
+    setting:
+      "a casual everyday bedroom dressing-table mirror in natural afternoon window light (faceless/neck-down or side-profile crop), a hair claw clip, lip balm, and a college tote bag visible naturally on the cluttered shelf",
+    camera:
+      "unedited 9:16 front-camera phone propped against a mirror, realistic daylight shadows, slight natural lens grain, zero airbrushed beauty filter or studio glow",
+    motion:
+      "natural everyday motion of tying hair up with a claw clip or grabbing a tote bag and phone before heading out, relaxed unhurried body language, zero CGI stiffness",
+    brollAction:
+      "relatable 'getting ready in 5 mins' POV grabbing your phone and tucking a small printed cheat-sheet into your college bag—effortless, trendy 2026 creator aesthetic",
+    algoNote:
+      "The #1 highest-converting 2026 Gen-Z format: casual 'getting ready while dropping real advice' text-on-screen clips feel 100% organic, pulling massive watch-time loops and DMs.",
+  },
+  {
+    name: "Rainy Window & College Notebook Flip POV",
+    mood: "cozy rainy-day private notes",
+    setting:
+      "near a rain-streaked Indian balcony grill window during overcast blue hour, soft cool daylight mixing with warm room light, a well-used spiral notebook with blue pen highlights and sticky tabs on a simple wooden bed-table",
+    camera:
+      "raw iPhone 14 Pro 9:16 vertical clip, natural handheld micro-shake, authentic paper grain and skin texture on hands, slightly muted everyday color tone",
+    motion:
+      "real hands slowly flip one highlighted notebook page while rain droplets shimmer softly outside the blurred window, calm steady cadence with zero warped letters",
+    brollAction:
+      "rain tapping on the window while a hand underlines one short line in a notebook and taps open the matching clean guide on a phone—zero fluff, pure cozy focus",
+    algoNote:
+      "Rain + handwritten notes kills 100% of 'fake AI scam' doubt and triggers huge curiosity ('wait what is written there? let me comment!').",
+  },
+];
+
+export function buildAntiSlopEbookVideoPrompts(
+  ebookTitle: string,
+  chapter1Title: string,
+  priceDisplay: string,
+  autoDmTrigger: string,
+  variationIndex = 0
+): EbookAntiSlopVideoPrompts {
+  const scene =
+    ANTI_SLOP_SCENES[Math.abs(Number(variationIndex)) % ANTI_SLOP_SCENES.length];
+  const shortTopic = String(ebookTitle || "2026 Private Playbook")
+    .replace(/^The\s+/i, "")
+    .slice(0, 68);
+  const shortCh1 = String(chapter1Title || "The Real Shortcut").slice(0, 58);
+
+  const antiSlopGuardrails =
+    "STRICT ZERO-AI-SLOP RULES: NO neon purple/blue cyber lights, NO glossy plastic airbrushed faces, NO generic corporate 'clean organized workspace + coffee cup' stock look, NO CGI 3D renders, NO floating holograms, NO readable garbled text on screens (keep screen blocks softly blurred so clean native Instagram text sits on top), NO fake luxury cars or cash fans. Must look 100% indistinguishable from a real unedited phone clip filmed by a normal Indian 20-something.";
+
+  return {
+    rawPhoneFirstFramePrompt: `Vertical 9:16 candid real-life smartphone photo (iPhone 15 Pro, 24mm f/1.8, natural everyday phone grain). Scene: ${scene.setting}. Feels like a genuine "${scene.mood}" moment for a reel about "${shortTopic}". Keep the upper-middle 35% of the frame clean and uncluttered so short white Instagram text reads easily. ${antiSlopGuardrails}`,
+    zeroSlopVideoMotionPrompt: `6-second vertical 9:16 raw handheld phone video (Kling / Veo / Runway / Flow AI). Visual: ${scene.setting}. Camera & Motion: ${scene.camera}; ${scene.motion}. Keep the vibe super casual, unpolished, and real—like a friend casually dropping a shortcut about "${shortCh1}" on their story. Natural 30fps phone shutter feel, zero sudden morphing, zero dramatic camera swoops. ${antiSlopGuardrails}`,
+    relatablePovBrollPrompt: `6-second relatable everyday 9:16 Indian Gen-Z POV B-roll clip: ${scene.brollAction}. Vibe: honest relief after finally figuring something out—zero ad feel, zero corporate polish. Natural shadows, slight handheld sway, clean center-top space for your short text ("${priceDisplay}" / comment "${autoDmTrigger}"). ${antiSlopGuardrails}`,
+    algorithmTriggerNote: `${scene.algoNote} (Vibe: ${scene.name} · Keep the clip ~6 seconds with a 2-line casual text overlay so people replay it while reading!)`,
+  };
+}
+
+export function buildRotatingEbookReelSectionFallback(params: {
+  ebookTitle: string;
+  chapterTitles: string[];
+  priceDisplay: string;
+  anchorPriceDisplay: string;
+  autoDmTrigger: string;
+  section: EbookReelSectionKey;
+  variationIndex: number;
+}): Partial<EbookGenerationResult['reelBlueprint']> {
+  const {
+    ebookTitle,
+    chapterTitles,
+    priceDisplay,
+    anchorPriceDisplay,
+    autoDmTrigger,
+    section,
+    variationIndex,
+  } = params;
+
+  const idx = Math.abs(Number(variationIndex) || 0);
+  const shortTitle = String(ebookTitle || "2026 Private Playbook").slice(0, 62);
+  const ch1 = (chapterTitles[0] || "The Actual Shortcut").slice(0, 56);
+  const ch2 = (chapterTitles[1] || "The Step-by-Step Move").slice(0, 56);
+  const ch3 = (chapterTitles[2] || "Exact Copy-Paste Scripts").slice(0, 56);
+  const trigger = String(autoDmTrigger || "SECRET").toUpperCase();
+  const price = priceDisplay || "₹29";
+  const anchor = anchorPriceDisplay || "₹1,999";
+
+  const prompts = buildAntiSlopEbookVideoPrompts(
+    shortTitle,
+    ch1,
+    price,
+    trigger,
+    idx
+  );
+
+  const videoPlans = [
+    {
+      visualStyle:
+        "Casual Getting-Ready / Tying Hair Up Drop (Looks 100% Like a Friend's Story, Zero Ad Vibe)",
+      shotByShot: [
+        `0.0s – 2.0s: Raw front-camera clip of you tying your hair up / putting on lip balm in normal room light; short lowercase text sits center-top: "honestly mad nobody told me this 6 months ago 😭"`,
+        `2.0s – 4.3s: Quick raw screen recording scrolling your private PDF notes ("${ch1}" & "${ch2}") with most lines lightly blurred so viewers lean in to see what's inside.`,
+        `4.3s – 6.0s: Cut back to a chill half-smile grabbing your bag: "put every exact link + copy-paste script in a ${price} pdf so you don't waste weeks — comment '${trigger}'"`,
+      ],
+      lightingAndAudioTip:
+        "Use a quiet trending chill audio at 10% volume with native Instagram Sans font (small clean text, NOT giant yellow ad banners). Keep it 5.8–6.2s and toggle ON 'Trial Reel' so Instagram tests it on 100% non-followers.",
+    },
+    {
+      visualStyle:
+        "Boiling Chai / Maggi Evening Kitchen Clip (Zero Skip Rate — Everyday Indian Home Energy)",
+      shotByShot: [
+        `0.0s – 1.8s: Casual 1-hand phone shot pouring simmering chai into a regular mug; real-talk text pops up: "people really charge ₹4,999 in webinars just to gatekeep these 5 basic links lol"`,
+        `1.8s – 4.2s: Quick raw phone-in-hand swipe showing the exact clickable filters & "${ch3}" copy-paste message inside your guide.`,
+        `4.2s – 6.0s: Back to taking a chill sip of chai: "kept the whole 5-part guide at ${price} (cheaper than momos). drop '${trigger}' & check your DM in 5 sec"`,
+      ],
+      lightingAndAudioTip:
+        "Keep the room lighting totally normal (don't over-edit or add flashy transitions—raw cuts get 3x higher trust). Pin one casual comment saying 'just sent the link to everyone who commented!'",
+    },
+    {
+      visualStyle:
+        "1 AM Messy Hostel Bed + Raw Notes App Scroll (High-Save Relatable Late-Night Vibe)",
+      shotByShot: [
+        `0.0s – 2.0s: Slightly shaky phone clip on a messy cotton bedsheet at night; relatable text hits right away: "pov: it's 1am and you're done watching 40-min videos that never show the actual websites"`,
+        `2.0s – 4.4s: Real thumb scrolling through the clean 5-part cheat-sheet for "${shortTitle}" (zoom slightly close on the exact links & copy-paste box).`,
+        `4.4s – 6.0s: Loop back to the cozy lamp frame: "save this for tomorrow or comment '${trigger}' and I'll auto-DM the ${price} pdf link right now"`,
+      ],
+      lightingAndAudioTip:
+        "Lower clip brightness slightly (-12% in Instagram Edits) so clean white lowercase text pops effortlessly. Keep text in the middle safe zone away from the bottom caption.",
+    },
+    {
+      visualStyle:
+        "Auto / Metro Window Golden-Hour Ride (Main-Character Quiet Reflection — Bestie-Share Magnet)",
+      shotByShot: [
+        `0.0s – 2.2s: Sunset view outside a moving auto/metro window with wired earphones visible; soft text drops in: "the quiet little notes I genuinely wish someone sent me before I wasted half the year..."`,
+        `2.2s – 4.5s: Smooth tilt down to your phone showing Part 01 (${ch1}) and the exact copy-paste scripts ready to use today.`,
+        `4.5s – 6.0s: Chill closing frame back to the sunset sky: "kept it at ${price} (instead of ${anchor}) so anyone starting out can grab it. comment '${trigger}'"`,
+      ],
+      lightingAndAudioTip:
+        "Pair with a soft viral acoustic/lo-fi reel sound at 12% volume. Reply to the first 8–10 comments casually yourself on top of Auto-DM—that early conversation boosts reach fast.",
+    },
+  ];
+
+  const overlaySets = [
+    [
+      {
+        triggerType: "1. Relatable Real-Talk Hook",
+        overlayText: `honestly mad nobody told me this earlier 😭 wasted months doing "${shortTitle}" the hard way when the actual shortcut takes 20 mins on your phone`,
+        whyItConverts:
+          "Sounds 100% like a real friend venting—zero ad vibe, stops the scroll immediately.",
+      },
+      {
+        triggerType: "2. No-Gatekeeping Curiosity Hook",
+        overlayText: `people literally charge ₹4,999+ in webinars to gatekeep "${ch1}" and these exact links. put all 5 parts + scripts in a ${price} pdf — comment "${trigger}"`,
+        whyItConverts:
+          "Calls out overpriced gurus and names the real secret inside so curious viewers comment instantly.",
+      },
+      {
+        triggerType: "3. Chill Snack-Price Drop",
+        overlayText: `we spend ₹80 on random iced coffee or momos without even thinking, so I kept this whole guide at ${price} (instead of ${anchor}) so you don't overthink it`,
+        whyItConverts:
+          "Casual, warm price framing with zero pushy sales language.",
+      },
+      {
+        triggerType: "4. Bestie-Send & Zero-Doubt Hook",
+        overlayText: `zero boring gyaan, zero random motivation quotes — literally just the real links, button clicks & copy-paste scripts. save this or comment "${trigger}" 🤍`,
+        whyItConverts:
+          "Kills 'is this just generic AI fluff?' doubt while boosting both Saves and Comments.",
+      },
+    ],
+    [
+      {
+        triggerType: "1. Relatable 1 AM Need Hook",
+        overlayText: `if one more reel tells me "just stay consistent" without showing the actual websites and steps... put everything I actually use for "${shortTitle}" in one ${price} pdf`,
+        whyItConverts:
+          "Validates real frustration with fake-motivation reels—builds instant trust.",
+      },
+      {
+        triggerType: "2. Specific Spoiler Tease",
+        overlayText: `part 01 (${ch1}) alone saved me weeks, and part 03 literally has the word-for-word scripts I copy-paste. drop "${trigger}" if you want the link in your DM`,
+        whyItConverts:
+          "Concrete preview proves real value is inside the PDF, driving fast DM requests.",
+      },
+      {
+        triggerType: "3. Friend-to-Friend Micro-Price",
+        overlayText: `kept it at ${price} (literally less than one cold coffee, usually ${anchor}) for this batch so college students & beginners can actually use it tonight`,
+        whyItConverts:
+          "Feels generous and approachable—zero resistance to grabbing the PDF.",
+      },
+      {
+        triggerType: "4. Best-Friend Share Trigger",
+        overlayText: `send this to the 1 friend you always make 2am plans with & comment "${trigger}" so my auto-DM drops the exact ${price} pdf link in your inbox in 5 sec`,
+        whyItConverts:
+          "Directly triggers Instagram's #1 2026 growth signal: DM Sends to close friends.",
+      },
+    ],
+    [
+      {
+        triggerType: "1. Quiet Confession Hook",
+        overlayText: `felt weird keeping these notes sitting in my phone while everyone is still stuck on outdated advice about "${shortTitle}". not gatekeeping anymore 🤍`,
+        whyItConverts:
+          "Warm, non-salesy tone makes viewers feel like they stumbled onto private notes.",
+      },
+      {
+        triggerType: "2. Real-Shortcut Curiosity Hook",
+        overlayText: `everyone keeps doing the crowded obvious thing while a tiny group quietly uses "${ch1}" + "${ch2}". put the exact links in a ${price} guide — comment "${trigger}"`,
+        whyItConverts:
+          "Creates natural curiosity without any cheesy dramatic buzzwords.",
+      },
+      {
+        triggerType: "3. Zero-Overthinking Price Hook",
+        overlayText: `takes 15 mins to read tonight, costs ${price} (cheaper than a snack, real value ${anchor}), and saves you months of guessing on youtube`,
+        whyItConverts:
+          "Pairs tiny reading time + tiny snack price so saying yes feels effortless.",
+      },
+      {
+        triggerType: "4. Save-For-Tonight Trigger",
+        overlayText: `save this if you're busy right now — or drop "${trigger}" below so the direct pdf link stays sitting in your DMs whenever you're ready`,
+        whyItConverts:
+          "Low-pressure CTA gets way more comments than aggressive 'BUY NOW' lines.",
+      },
+    ],
+  ];
+
+  const captionSets = [
+    `honestly felt weird letting these notes just sit in my laptop folder while so many people are still stuck watching 30-minute videos that never show the actual links 🤍\n\nI cleaned up everything I actually use for "${shortTitle}" into one short, super-easy 5-part PDF so you don't waste months guessing:\n• 01: ${ch1}\n• 02: ${ch2}\n• 03: ${ch3}\n• plus all the real websites, exact button clicks, honest numbers & word-for-word copy-paste scripts.\n\nzero boring textbook language, zero random motivation quotes — just simple plain English you can read in 15 mins tonight.\n\nkept it at ${price} (less than a plate of momos / iced coffee, instead of ${anchor}) so anyone can grab it without overthinking.\n\ncomment "${trigger}" below and my Auto-DM will send the link straight to your inbox in 5 seconds (and save this post so you don't lose it!).`,
+    `read this twice if you have 200 saved reels and still don't know what actual step 1 is 🫠\n\nmost people talk in circles online just to drag out a 20-minute video. inside this quick 5-part playbook on "${shortTitle}", I skipped all the filler and only kept what actually works right now:\n1. the exact links & hidden filters for ${ch1}\n2. simple step-by-step moves for ${ch2}\n3. ready-to-paste scripts (${ch3}) so you don't stare at a blank screen\n\nliterally takes 15 minutes to read on your phone and saves you months of trial-and-error.\n\nopen today for ${price} (normally ${anchor}) — instant download right on your phone.\n\ndrop "${trigger}" in the comments and check your Message Requests in 5 seconds for the direct link!`,
+    `not a flashy ad — just the private notes I wish someone handed me when I first started figuring out "${shortTitle}" ✨\n\ninstead of paying ₹3,000+ for recycled courses, everything is laid out cleanly in one mobile-friendly PDF:\n✓ ${ch1}\n✓ ${ch2}\n✓ ${ch3}\n✓ quick 24-hour checklist so you know what to do first\n\nkept it at ${price} (cheaper than a snack) for now before it goes back up to ${anchor}.\n\ncomment "${trigger}" right now & I'll send the link straight to your DM — and send this reel to the friend you're locking in with this year!`,
+  ];
+
+  const slugWords = shortTitle
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(
+      (w) =>
+        w.length > 3 &&
+        !/^\d+$/.test(w) &&
+        ![
+          "that",
+          "this",
+          "with",
+          "from",
+          "into",
+          "your",
+          "2026",
+          "2027",
+          "guide",
+          "system",
+          "playbook",
+          "bible",
+          "indian",
+          "india",
+          "free",
+          "best",
+          "exact",
+        ].includes(w)
+    )
+    .slice(0, 4);
+
+  const kwLead = slugWords.slice(0, 2).join(" ") || "real shortcuts";
+  const cleanTitlePhrase = shortTitle
+    .toLowerCase()
+    .replace(/^the\s+/i, "")
+    .replace(/[^a-z0-9₹\s-]/g, "")
+    .split(/\s+/)
+    .slice(0, 5)
+    .join(" ");
+  const nicheTagRoot = slugWords[0] || "genz";
+
+  const tagPool = [
+    [
+      `#${nicheTagRoot}tips2026`,
+      "#gatekeptwebsites",
+      "#smartstudentindia",
+      "#realhacks2026",
+      "#lockin2026",
+    ],
+    [
+      `#${nicheTagRoot}guide`,
+      "#underratedwebsites",
+      "#indianstudents",
+      "#digitalnotes",
+      "#nogatekeeping",
+    ],
+    [
+      `#${nicheTagRoot}hacks`,
+      "#usefulwebsites",
+      "#collegehacksindia",
+      "#glowup2026",
+      "#actuallyworks",
+    ],
+  ];
+
+  const seoPool = [
+    [
+      `${kwLead} step by step india`,
+      cleanTitlePhrase || `${kwLead} guide 2026`,
+      "useful websites nobody talks about 2026",
+      "free tools for indian college students",
+      "simple beginner pdf guide india",
+      "real shortcuts no scam india",
+      "exact websites and scripts cheat sheet",
+      "2026 student growth hacks india",
+      "copy paste dm templates india",
+      "lock in routine 2026 india",
+    ],
+    [
+      `how to start ${kwLead} from scratch`,
+      `${kwLead} real links 2026`,
+      "gatekept websites for students india",
+      "easy step by step notes pdf",
+      "zero investment skills india 2026",
+      "real free portals for beginners",
+      "honest online skills india",
+      "instagram trial reels tips 2026",
+      "micro pdf guides india",
+      "no gatekeeping cheat sheet",
+    ],
+  ];
+
+  const fullFallback: EbookGenerationResult['reelBlueprint'] = {
+    aiVideoPrompts: prompts,
+    sixSecondVideoIdea: videoPlans[idx % videoPlans.length],
+    psychologicalPriceOverlays: overlaySets[idx % overlaySets.length],
+    autoDmCaption: captionSets[idx % captionSets.length],
+    seoKeywords: seoPool[idx % seoPool.length],
+    hashtags: tagPool[idx % tagPool.length].slice(0, 5),
+  };
+
+  if (section === "all") return fullFallback;
+  if (section === "prompts") return { aiVideoPrompts: fullFallback.aiVideoPrompts };
+  if (section === "videoPlan")
+    return { sixSecondVideoIdea: fullFallback.sixSecondVideoIdea };
+  if (section === "overlays")
+    return { psychologicalPriceOverlays: fullFallback.psychologicalPriceOverlays };
+  if (section === "caption")
+    return { autoDmCaption: fullFallback.autoDmCaption };
+  return {
+    seoKeywords: fullFallback.seoKeywords,
+    hashtags: fullFallback.hashtags,
+  };
+}
+
 
 
 
